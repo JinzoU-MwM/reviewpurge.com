@@ -10,34 +10,57 @@ export default async function AdminLoginPage({ searchParams }: Props) {
   const nextPath = params.next && params.next.startsWith("/") ? params.next : "/admin";
 
   return (
-    <section className="mx-auto max-w-md space-y-6 pt-8">
-      <div className="text-center space-y-2">
-        <Link href="/" className="heading-display text-3xl font-bold text-slate-900 inline-block">
-          Review<span className="text-primary">Purge</span>
-        </Link>
-        <p className="text-sm text-slate-500">Admin Panel</p>
-      </div>
+    <div className="admin-page min-h-[80vh] flex items-center justify-center">
+      <div className="w-full max-w-md space-y-6">
+        {/* Brand */}
+        <div className="text-center space-y-3">
+          <Link href="/" className="inline-block">
+            <span className="heading-display text-4xl font-bold text-[var(--admin-text)]">
+              Review<span className="text-[var(--primary-light)]">Purge</span>
+            </span>
+          </Link>
+          <p className="text-sm text-[var(--admin-text-muted)]">Admin Authentication Portal</p>
+        </div>
 
-      <div className="panel overflow-hidden">
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-primary/80 p-6 text-white text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-2xl backdrop-blur">
-            🔐
+        {/* Login Card */}
+        <div className="admin-panel overflow-hidden">
+          {/* Header */}
+          <div className="relative bg-gradient-to-r from-[#0d7a6f] via-[#0a5550] to-[#073d39] p-8 text-center">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_90%,rgba(216,140,36,0.25),transparent_40%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_90%_10%,rgba(11,124,111,0.3),transparent_35%)]" />
+            <div className="relative z-10">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-3xl backdrop-blur border border-white/15">
+                
+              </div>
+              <h1 className="heading-display mt-4 text-2xl text-white">Admin Login</h1>
+              <p className="mt-2 text-sm text-white/60">
+                Secure authentication via magic link
+              </p>
+            </div>
           </div>
-          <h1 className="heading-display mt-3 text-2xl">Admin Login</h1>
-          <p className="mt-1 text-sm text-white/70">
-            Sign in via magic link
+
+          {/* Form */}
+          <div className="p-6">
+            <AdminLoginForm nextPath={nextPath} />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm text-[var(--admin-text-muted)] hover:text-[var(--primary-light)] transition-colors">
+            <span></span>
+            <span>Back to homepage</span>
+          </Link>
+        </div>
+
+        {/* Security Notice */}
+        <div className="text-center">
+          <p className="text-xs text-[var(--admin-text-dim)]">
+             This area is restricted to authorized administrators only.
           </p>
         </div>
-        <div className="p-6">
-          <AdminLoginForm nextPath={nextPath} />
-        </div>
       </div>
-
-      <p className="text-center text-xs text-slate-400">
-        <Link href="/" className="transition hover:text-primary">
-          ← Back to homepage
-        </Link>
-      </p>
-    </section>
+    </div>
   );
 }
+

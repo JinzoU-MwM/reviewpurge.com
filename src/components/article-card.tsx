@@ -12,7 +12,7 @@ export function ArticleCard({ title, slug, excerpt, date }: Props) {
     <article className="article-card group">
       <div className="article-card-cover">
         <div className="relative z-10 space-y-1">
-          <span className="badge badge-neutral border-white/20 bg-white/20 text-[10px] text-white">
+          <span className="badge border border-white/25 bg-white/15 text-[10px] text-white">
             Article
           </span>
           {date && <p className="text-xs text-white/80">{date}</p>}

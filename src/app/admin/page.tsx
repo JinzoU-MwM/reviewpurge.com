@@ -181,9 +181,7 @@ export default async function AdminPage({ searchParams }: Props) {
           </div>
         ) : (
           products.map((product) => (
-            <form key={product.id} action={updateProductAction} className="panel space-y-3 p-5">
-              <input type="hidden" name="id" value={product.id} />
-              <input type="hidden" name="returnTo" value={returnTo} />
+            <article key={product.id} className="panel space-y-3 p-5">
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 text-xs text-slate-600">
                   <input type="checkbox" name="ids" value={product.id} form="bulk-products-form" />
@@ -193,25 +191,34 @@ export default async function AdminPage({ searchParams }: Props) {
                   {product.isPublished ? "Published" : "Draft"}
                 </span>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <input name="name" defaultValue={product.name} required className="input" />
-                <input name="slug" defaultValue={product.slug} required className="input" />
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <input name="categorySlug" defaultValue={product.category?.slug ?? ""} required className="input" />
-                <input name="affiliateUrl" defaultValue={product.affiliateUrl} className="input" />
-              </div>
-              <textarea name="description" defaultValue={product.description} className="input min-h-20 resize-none" />
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input type="checkbox" name="isPublished" defaultChecked={product.isPublished ?? false} />
-                Published
-              </label>
-              <div className="flex items-center gap-2">
-                <button type="submit" className="btn btn-primary btn-sm">Update</button>
-                <button type="submit" formAction={deleteProductAction} className="btn btn-sm bg-red-600 text-white hover:bg-red-700">Delete</button>
-              </div>
 
-              {/* Affiliate Programs */}
+              <form action={updateProductAction} className="space-y-3">
+                <input type="hidden" name="id" value={product.id} />
+                <input type="hidden" name="returnTo" value={returnTo} />
+                <div className="grid gap-3 md:grid-cols-2">
+                  <input name="name" defaultValue={product.name} required className="input" />
+                  <input name="slug" defaultValue={product.slug} required className="input" />
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <input name="categorySlug" defaultValue={product.category?.slug ?? ""} required className="input" />
+                  <input name="affiliateUrl" defaultValue={product.affiliateUrl} className="input" />
+                </div>
+                <textarea name="description" defaultValue={product.description} className="input min-h-20 resize-none" />
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input type="checkbox" name="isPublished" defaultChecked={product.isPublished ?? false} />
+                  Published
+                </label>
+                <button type="submit" className="btn btn-primary btn-sm">Update</button>
+              </form>
+
+              <form action={deleteProductAction}>
+                <input type="hidden" name="id" value={product.id} />
+                <input type="hidden" name="returnTo" value={returnTo} />
+                <button type="submit" className="btn btn-sm bg-red-600 text-white hover:bg-red-700">
+                  Delete
+                </button>
+              </form>
+
               <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
                 <h3 className="text-sm font-bold text-slate-900">Affiliate Programs</h3>
                 {(programsByProduct.get(product.id) ?? []).length === 0 ? (
@@ -266,7 +273,7 @@ export default async function AdminPage({ searchParams }: Props) {
                   <button type="submit" className="btn btn-primary btn-sm w-fit text-xs">Add Program</button>
                 </form>
               </div>
-            </form>
+            </article>
           ))
         )}
 

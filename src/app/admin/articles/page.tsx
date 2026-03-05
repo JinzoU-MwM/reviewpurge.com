@@ -5,6 +5,7 @@ import {
   deleteArticleAction,
   updateArticleAction,
 } from "@/app/admin/actions";
+import { AdminNav } from "@/components/admin-nav";
 import { BulkSelectControls } from "@/components/bulk-select-controls";
 import { listRecentActivityLogs } from "@/lib/db/queries/activity-logs";
 import {
@@ -74,162 +75,272 @@ export default async function AdminArticlesPage({ searchParams }: Props) {
     article_error: "Article action failed. Please try again.",
   };
 
+  const publishedCount = articles.filter(a => a.isPublished).length;
+  const draftCount = articles.length - publishedCount;
+
   return (
-    <section className="space-y-6">
-      {/* Header */}
-      <div className="hero-surface p-6 md:p-8">
-        <div className="hero-orb hero-orb-1" />
-        <div className="relative z-10">
-          <p className="section-kicker text-white/70">Content Studio</p>
-          <h1 className="heading-display mt-2 text-3xl text-white">Article Management</h1>
-          <p className="mt-2 max-w-2xl text-sm text-emerald-50/80">
-            Kelola pipeline konten SEO: draft, schedule, publish, dan optimasi metadata.
-          </p>
-        </div>
-      </div>
-
-      {/* Create Article */}
-      <form action={createArticleAction} className="panel p-5 space-y-4">
-        <input type="hidden" name="returnTo" value={returnTo} />
-        <h2 className="text-lg font-bold text-slate-900">Create Article</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          <input name="title" required placeholder="Article title" className="input" />
-          <input name="slug" required placeholder="article-slug" className="input" />
-        </div>
-        <textarea name="excerpt" required placeholder="Short summary" className="input min-h-20 resize-none" />
-        <textarea name="content" required placeholder="Main article content" className="input min-h-40 resize-none" />
-        <div className="grid gap-3 md:grid-cols-3">
-          <input name="metaTitle" placeholder="SEO meta title" className="input" />
-          <input name="metaDescription" placeholder="SEO meta description" className="input" />
-          <input name="ogImageUrl" type="url" placeholder="Open Graph image URL" className="input" />
-        </div>
-        <label className="space-y-1 text-sm text-slate-700">
-          <span>Schedule publish time (optional)</span>
-          <input name="publishAt" type="datetime-local" className="input" />
-        </label>
-        <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input type="checkbox" name="isPublished" className="size-4 rounded" />
-          Publish now (if schedule empty or already passed)
-        </label>
-        <button type="submit" className="btn btn-primary btn-sm">Save Article</button>
-      </form>
-
-      {/* Article List */}
-      <div className="space-y-4">
-        {statusLabel[status] && (
-          <div className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm ${status.includes("error") || status === "unauthorized" || status === "rate_limited"
-              ? "border-red-200 bg-red-50 text-red-800"
-              : "border-emerald-200 bg-emerald-50 text-emerald-800"
-            }`}>
-            <span>{status.includes("error") || status === "unauthorized" ? "⚠️" : "✓"}</span>
-            {statusLabel[status]}
+    <div className="admin-page">
+      <div className="admin-layout">
+        <AdminNav currentPath="/admin/articles" />
+        
+        <div className="admin-content space-y-6">
+          {/* Header */}
+          <div className="admin-header">
+            <div className="admin-header-icon">✍️</div>
+            <div className="relative z-10">
+              <p className="section-kicker">Content Studio</p>
+              <h1 className="heading-display mt-2">Article Management</h1>
+              <p className="mt-2 max-w-2xl">
+                Kelola pipeline konten SEO: draft, schedule, publish, dan optimasi metadata.
+              </p>
+            </div>
           </div>
-        )}
-        <div className="panel space-y-3 p-4">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <h2 className="text-lg font-bold text-slate-900">Existing Articles</h2>
-            <form className="flex flex-wrap items-center gap-2" method="get">
-              <input name="q" defaultValue={q} placeholder="Search article" className="input w-auto" />
-              <button type="submit" className="btn btn-ghost btn-sm">Search</button>
-              <select name="published" defaultValue={published} className="input w-auto">
-                <option value="all">All</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-              </select>
-              <select name="sort" defaultValue={sort} className="input w-auto">
-                <option value="latest">Latest</option>
-                <option value="oldest">Oldest</option>
-                <option value="name">Name</option>
-              </select>
-            </form>
+
+          {/* Stats */}
+          <div className="admin-stats stagger-children">
+            <div className="admin-stat-card">
+              <span className="stat-icon">📝</span>
+              <p className="stat-label">Total Articles</p>
+              <p className="stat-value">{total}</p>
+              <p className="stat-meta">{publishedCount} published · {draftCount} draft</p>
+            </div>
+            <div className="admin-stat-card stat-success">
+              <span className="stat-icon">✅</span>
+              <p className="stat-label">Published</p>
+              <p className="stat-value">{publishedCount}</p>
+              <p className="stat-meta">Live on blog</p>
+            </div>
+            <div className="admin-stat-card stat-warning">
+              <span className="stat-icon">📝</span>
+              <p className="stat-label">Drafts</p>
+              <p className="stat-value">{draftCount}</p>
+              <p className="stat-meta">Pending review</p>
+            </div>
           </div>
-          {articles.length > 0 && (
-            <form id="bulk-articles-form" action={bulkArticleAction} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white/80 p-3">
-              <input type="hidden" name="returnTo" value={returnTo} />
-              <BulkSelectControls formId="bulk-articles-form" />
-              <button type="submit" name="bulkAction" value="publish" className="btn btn-ghost btn-sm">Publish</button>
-              <button type="submit" name="bulkAction" value="unpublish" className="btn btn-ghost btn-sm">Unpublish</button>
-              <button type="submit" name="bulkAction" value="delete" className="btn btn-sm bg-red-600 text-white hover:bg-red-700">Delete</button>
-            </form>
+
+          {/* Status Banner */}
+          {statusLabel[status] && (
+            <div className={`admin-banner ${status.includes("error") || status === "unauthorized" || status === "rate_limited" ? "admin-banner-danger" : "admin-banner-success"}`}>
+              <span className="admin-banner-icon">{status.includes("error") || status === "unauthorized" ? "⚠️" : "✓"}</span>
+              <span>{statusLabel[status]}</span>
+            </div>
           )}
-        </div>
 
-        {articles.length === 0 ? (
-          <div className="glass-card p-8 text-center">
-            <span className="text-3xl">✍️</span>
-            <p className="mt-2 text-sm text-slate-600">No articles yet. Add your first article above.</p>
-          </div>
-        ) : (
-          articles.map((article) => (
-            <form key={article.id} action={updateArticleAction} className="panel space-y-3 p-5">
-              <input type="hidden" name="id" value={article.id} />
-              <input type="hidden" name="returnTo" value={returnTo} />
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-xs text-slate-600">
-                  <input type="checkbox" name="ids" value={article.id} form="bulk-articles-form" />
-                  Select
-                </label>
-                <span className={`badge ${article.isPublished ? "badge-success" : "badge-neutral"}`}>
-                  {article.isPublished ? "Published" : "Draft"}
-                </span>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <input name="title" defaultValue={article.title} required className="input" />
-                <input name="slug" defaultValue={article.slug} required className="input" />
-              </div>
-              <textarea name="excerpt" defaultValue={article.excerpt ?? ""} required className="input min-h-20 resize-none" />
-              <textarea name="content" defaultValue={article.content} required className="input min-h-40 resize-none" />
-              <div className="grid gap-3 md:grid-cols-3">
-                <input name="metaTitle" defaultValue={article.metaTitle ?? ""} placeholder="SEO meta title" className="input" />
-                <input name="metaDescription" defaultValue={article.metaDescription ?? ""} placeholder="SEO meta description" className="input" />
-                <input name="ogImageUrl" type="url" defaultValue={article.ogImageUrl ?? ""} placeholder="Open Graph image URL" className="input" />
-              </div>
-              <label className="space-y-1 text-sm text-slate-700">
-                <span>Schedule publish time (optional)</span>
-                <input name="publishAt" type="datetime-local" defaultValue={toDatetimeLocal(article.publishAt)} className="input" />
-              </label>
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input type="checkbox" name="isPublished" defaultChecked={article.isPublished} />
-                Published
-              </label>
-              <div className="flex items-center gap-2">
-                <button type="submit" className="btn btn-primary btn-sm">Update</button>
-                <button type="submit" formAction={deleteArticleAction} className="btn btn-sm bg-red-600 text-white hover:bg-red-700">Delete</button>
-              </div>
-            </form>
-          ))
-        )}
-
-        <div className="flex items-center justify-between text-sm text-slate-600">
-          <p>Page {safePage} of {pageCount} ({total} items)</p>
-          <div className="flex items-center gap-2">
-            <Link href={`/admin/articles?page=${prevPage}${queryQ}${queryPublished}${querySort}`} className="btn btn-ghost btn-sm">Prev</Link>
-            <Link href={`/admin/articles?page=${nextPage}${queryQ}${queryPublished}${querySort}`} className="btn btn-ghost btn-sm">Next</Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="panel space-y-3 p-5">
-        <h2 className="text-lg font-bold text-slate-900">Recent Activity</h2>
-        {logs.length === 0 ? (
-          <p className="text-sm text-slate-600">No activity logs yet.</p>
-        ) : (
-          <ul className="space-y-2">
-            {logs.map((log) => (
-              <li key={log.id} className="rounded-xl border border-slate-200 bg-white/80 p-3 text-sm">
-                <div className="flex items-start gap-2">
-                  <span className="badge badge-neutral text-[10px]">{log.action}</span>
-                  <span className="text-slate-700">{log.message}</span>
+          {/* Create Article */}
+          <div className="admin-panel">
+            <div className="admin-panel-header">
+              <h2><span className="icon">➕</span> Create New Article</h2>
+            </div>
+            <div className="admin-panel-body">
+              <form action={createArticleAction} className="admin-form">
+                <input type="hidden" name="returnTo" value={returnTo} />
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Title</label>
+                    <input name="title" required placeholder="Enter article title" className="admin-input" />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Slug</label>
+                    <input name="slug" required placeholder="article-slug" className="admin-input" />
+                  </div>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">
-                  {log.actorEmail ?? "unknown"} • {new Date(log.createdAt).toLocaleString()}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
+                <div className="admin-form-group">
+                  <label>Excerpt</label>
+                  <textarea name="excerpt" required placeholder="Short summary for SEO and previews" className="admin-input admin-textarea" style={{ minHeight: "80px" }} />
+                </div>
+                <div className="admin-form-group">
+                  <label>Content</label>
+                  <textarea name="content" required placeholder="Main article content (supports basic HTML)" className="admin-input admin-textarea" style={{ minHeight: "160px" }} />
+                </div>
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Meta Title (SEO)</label>
+                    <input name="metaTitle" placeholder="SEO meta title" className="admin-input" />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Meta Description</label>
+                    <input name="metaDescription" placeholder="SEO meta description" className="admin-input" />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>OG Image URL</label>
+                    <input name="ogImageUrl" type="url" placeholder="Open Graph image URL" className="admin-input" />
+                  </div>
+                </div>
+                <div className="admin-form-group">
+                  <label>Schedule Publish Time (optional)</label>
+                  <input name="publishAt" type="datetime-local" className="admin-input" />
+                </div>
+                <label className="admin-checkbox-label">
+                  <input type="checkbox" name="isPublished" className="admin-checkbox" />
+                  Publish immediately (if schedule empty or already passed)
+                </label>
+                <div>
+                  <button type="submit" className="admin-btn admin-btn-primary">
+                    💾 Save Article
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          {/* Article List */}
+          <div className="admin-panel">
+            <div className="admin-panel-header">
+              <h2><span className="icon">📋</span> Article Library</h2>
+              <form className="flex flex-wrap items-center gap-2" method="get">
+                <input name="q" defaultValue={q} placeholder="Search articles..." className="admin-input w-48" />
+                <select name="published" defaultValue={published} className="admin-input admin-select w-32">
+                  <option value="all">All Status</option>
+                  <option value="published">Published</option>
+                  <option value="draft">Draft</option>
+                </select>
+                <select name="sort" defaultValue={sort} className="admin-input admin-select w-28">
+                  <option value="latest">Latest</option>
+                  <option value="oldest">Oldest</option>
+                  <option value="name">Name</option>
+                </select>
+                <button type="submit" className="admin-btn admin-btn-ghost admin-btn-sm">🔍 Filter</button>
+              </form>
+            </div>
+
+            {articles.length > 0 && (
+              <div className="px-6 pt-4 pb-2 border-b border-[var(--admin-border-subtle)]">
+                <form id="bulk-articles-form" action={bulkArticleAction} className="flex flex-wrap items-center gap-2">
+                  <input type="hidden" name="returnTo" value={returnTo} />
+                  <BulkSelectControls formId="bulk-articles-form" />
+                  <button type="submit" name="bulkAction" value="publish" className="admin-btn admin-btn-ghost admin-btn-sm">✓ Publish</button>
+                  <button type="submit" name="bulkAction" value="unpublish" className="admin-btn admin-btn-ghost admin-btn-sm">○ Unpublish</button>
+                  <button type="submit" name="bulkAction" value="delete" className="admin-btn admin-btn-danger admin-btn-sm">🗑️ Delete</button>
+                </form>
+              </div>
+            )}
+
+            <div className="admin-panel-body">
+              {articles.length === 0 ? (
+                <div className="admin-empty">
+                  <span className="admin-empty-icon">✍️</span>
+                  <p className="admin-empty-title">No articles yet</p>
+                  <p className="admin-empty-description">Create your first article using the form above.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {articles.map((article) => (
+                    <div key={article.id} className="admin-list-item">
+                      <div className="admin-list-item-icon" style={{ opacity: article.isPublished ? 1 : 0.5 }}>
+                        {article.isPublished ? "📄" : "📝"}
+                      </div>
+                      <div className="admin-list-item-content">
+                        <form action={updateArticleAction} className="space-y-3">
+                          <input type="hidden" name="id" value={article.id} />
+                          <input type="hidden" name="returnTo" value={returnTo} />
+                          
+                          <div className="admin-list-item-header">
+                            <label className="admin-checkbox-label text-xs">
+                              <input type="checkbox" name="ids" value={article.id} form="bulk-articles-form" className="admin-checkbox" />
+                              Select
+                            </label>
+                            <span className={`admin-badge ${article.isPublished ? "admin-badge-success" : "admin-badge-neutral"}`}>
+                              {article.isPublished ? "Published" : "Draft"}
+                            </span>
+                          </div>
+
+                          <div className="admin-form-row">
+                            <div className="admin-form-group">
+                              <label>Title</label>
+                              <input name="title" defaultValue={article.title} required className="admin-input" />
+                            </div>
+                            <div className="admin-form-group">
+                              <label>Slug</label>
+                              <input name="slug" defaultValue={article.slug} required className="admin-input" />
+                            </div>
+                          </div>
+                          <div className="admin-form-group">
+                            <label>Excerpt</label>
+                            <textarea name="excerpt" defaultValue={article.excerpt ?? ""} required className="admin-input admin-textarea" style={{ minHeight: "60px" }} />
+                          </div>
+                          <div className="admin-form-group">
+                            <label>Content</label>
+                            <textarea name="content" defaultValue={article.content} required className="admin-input admin-textarea" style={{ minHeight: "120px" }} />
+                          </div>
+                          <div className="admin-form-row">
+                            <div className="admin-form-group">
+                              <label>Meta Title</label>
+                              <input name="metaTitle" defaultValue={article.metaTitle ?? ""} placeholder="SEO meta title" className="admin-input" />
+                            </div>
+                            <div className="admin-form-group">
+                              <label>Meta Description</label>
+                              <input name="metaDescription" defaultValue={article.metaDescription ?? ""} placeholder="SEO meta description" className="admin-input" />
+                            </div>
+                            <div className="admin-form-group">
+                              <label>OG Image</label>
+                              <input name="ogImageUrl" type="url" defaultValue={article.ogImageUrl ?? ""} placeholder="Image URL" className="admin-input" />
+                            </div>
+                          </div>
+                          <div className="admin-form-group">
+                            <label>Schedule Publish</label>
+                            <input name="publishAt" type="datetime-local" defaultValue={toDatetimeLocal(article.publishAt)} className="admin-input" />
+                          </div>
+                          
+                          <div className="flex flex-wrap items-center gap-3">
+                            <label className="admin-checkbox-label">
+                              <input type="checkbox" name="isPublished" defaultChecked={article.isPublished} className="admin-checkbox" />
+                              Published
+                            </label>
+                            <button type="submit" className="admin-btn admin-btn-primary admin-btn-sm">💾 Update</button>
+                            <button type="submit" formAction={deleteArticleAction} className="admin-btn admin-btn-danger admin-btn-sm">🗑️ Delete</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {articles.length > 0 && (
+              <div className="admin-pagination">
+                <span>Page {safePage} of {pageCount} ({total} items)</span>
+                <div className="admin-pagination-controls">
+                  <Link href={`/admin/articles?page=${prevPage}${queryQ}${queryPublished}${querySort}`} className="admin-btn admin-btn-ghost admin-btn-sm">← Prev</Link>
+                  <Link href={`/admin/articles?page=${nextPage}${queryQ}${queryPublished}${querySort}`} className="admin-btn admin-btn-ghost admin-btn-sm">Next →</Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Recent Activity */}
+          <div className="admin-panel">
+            <div className="admin-panel-header">
+              <h2><span className="icon">📋</span> Recent Activity</h2>
+            </div>
+            <div className="admin-panel-body">
+              {logs.length === 0 ? (
+                <div className="admin-empty">
+                  <span className="admin-empty-icon">📋</span>
+                  <p className="admin-empty-title">No activity yet</p>
+                  <p className="admin-empty-description">Actions will appear here.</p>
+                </div>
+              ) : (
+                <div className="admin-list">
+                  {logs.map((log) => (
+                    <div key={log.id} className="admin-log-entry">
+                      <div className="admin-log-entry-header">
+                        <span className="admin-badge admin-badge-neutral">{log.action}</span>
+                        <span className="admin-log-entry-message">{log.message}</span>
+                      </div>
+                      <div className="admin-log-entry-footer">
+                        <span>{log.actorEmail ?? "system"}</span>
+                        <span>{new Date(log.createdAt).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-    </section>
+    </div>
   );
 }

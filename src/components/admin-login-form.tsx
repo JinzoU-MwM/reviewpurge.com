@@ -37,43 +37,61 @@ export function AdminLoginForm({ nextPath }: Props) {
     }
   }
 
-  return (
-    <>
-      {!canUseSupabase ? (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <span className="text-lg">⚠️</span>
-          <p className="text-sm text-amber-800">
-            Supabase environment variables belum diisi. Set <code className="rounded bg-amber-100 px-1 font-mono text-xs">.env.local</code> dulu.
+  if (!canUseSupabase) {
+    return (
+      <div className="admin-banner admin-banner-warning">
+        <span className="admin-banner-icon">WARN</span>
+        <div>
+          <p className="font-semibold">Configuration Required</p>
+          <p className="text-sm mt-1">
+            Supabase environment variables are not set. Please configure{" "}
+            <code className="admin-code">.env.local</code> with your Supabase credentials.
           </p>
         </div>
-      ) : (
-        <form onSubmit={onSubmit} className="space-y-4">
-          <label className="space-y-1.5 text-sm text-slate-700">
-            <span className="font-medium">Email admin</span>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="admin@email.com"
-              className="input"
-            />
-          </label>
-          <button
-            type="submit"
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <form onSubmit={onSubmit} className="admin-form">
+        <div className="admin-form-group">
+          <label>Admin Email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="admin@example.com"
+            className="admin-input"
             disabled={isLoading}
-            className="btn btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isLoading ? "Sending..." : "Send Magic Link"}
-          </button>
-        </form>
-      )}
+          />
+          <p className="text-xs text-[var(--admin-text-dim)] mt-1.5">
+            We will send a secure magic link to this email address.
+          </p>
+        </div>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="admin-btn admin-btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <>
+              <span>WAIT</span>
+              <span>Sending Magic Link...</span>
+            </>
+          ) : (
+            <>
+              <span>GO</span>
+              <span>Send Magic Link</span>
+            </>
+          )}
+        </button>
+      </form>
+
       {message && (
-        <div className={`mt-4 flex items-start gap-2 rounded-xl border p-3 text-sm ${message.includes("sent")
-            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-            : "border-red-200 bg-red-50 text-red-800"
-          }`}>
-          <span>{message.includes("sent") ? "✓" : "⚠️"}</span>
+        <div className={`admin-banner mt-4 ${message.includes("sent") ? "admin-banner-success" : "admin-banner-danger"}`}>
+          <span className="admin-banner-icon">{message.includes("sent") ? "OK" : "WARN"}</span>
           <p aria-live="polite">{message}</p>
         </div>
       )}
