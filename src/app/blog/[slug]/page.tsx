@@ -72,11 +72,14 @@ export default async function BlogDetailPage({ params }: Props) {
           <div className="hero-orb hero-orb-1" />
           <div className="relative z-10 space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <Link href="/blog" className="badge badge-neutral bg-white/20 text-white border-white/20">
+              <Link
+                href="/blog"
+                className="badge border border-white/35 bg-white/15 text-white transition hover:bg-white/25"
+              >
                 ← Back to Blog
               </Link>
               {article.publishedAt && (
-                <span className="badge badge-neutral bg-white/15 text-white/80 border-white/15">
+                <span className="badge border border-white/25 bg-white/10 text-white/90">
                   {new Date(article.publishedAt).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
@@ -144,7 +147,10 @@ export default async function BlogDetailPage({ params }: Props) {
       <header className="hero-surface overflow-hidden p-8 md:p-12">
         <div className="hero-orb hero-orb-1" />
         <div className="relative z-10 space-y-4">
-          <Link href="/blog" className="badge badge-neutral bg-white/20 text-white border-white/20">
+          <Link
+            href="/blog"
+            className="badge border border-white/35 bg-white/15 text-white transition hover:bg-white/25"
+          >
             ← Back to Blog
           </Link>
           <h1 className="heading-display text-3xl text-white md:text-4xl reveal-up">
