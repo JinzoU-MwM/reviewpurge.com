@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 type Props = {
   nextPath: string;
 };
+
+const inputClass =
+  "w-full rounded-xl border border-slate-300/80 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 export function AdminLoginForm({ nextPath }: Props) {
   const [email, setEmail] = useState("");
@@ -40,29 +43,37 @@ export function AdminLoginForm({ nextPath }: Props) {
   return (
     <>
       {!canUseSupabase ? (
-        <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+        <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
           Supabase environment variables belum diisi. Set `.env.local` dulu.
         </p>
       ) : (
         <form onSubmit={onSubmit} className="space-y-3">
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="admin@email.com"
-            className="w-full rounded-md border border-slate-300 px-3 py-2"
-          />
+          <label className="space-y-1 text-sm text-slate-700">
+            <span>Email admin</span>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="admin@email.com"
+              className={inputClass}
+            />
+          </label>
           <button
             type="submit"
             disabled={isLoading}
-            className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? "Sending..." : "Send Magic Link"}
           </button>
         </form>
       )}
-      {message && <p className="text-sm text-slate-700">{message}</p>}
+      {message && (
+        <p aria-live="polite" className="rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-700">
+          {message}
+        </p>
+      )}
     </>
   );
 }
+

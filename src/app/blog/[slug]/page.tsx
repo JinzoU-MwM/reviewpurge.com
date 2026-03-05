@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -61,30 +61,46 @@ export default async function BlogDetailPage({ params }: Props) {
     };
 
     return (
-      <article className="mx-auto max-w-3xl space-y-6">
+      <article className="mx-auto max-w-4xl space-y-6">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold">{article.title}</h1>
-          {article.excerpt && <p className="text-slate-600">{article.excerpt}</p>}
+
+        <header className="panel overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/15 via-white to-accent/20 p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">Article</p>
+            <h1 className="heading-display mt-2 text-4xl text-slate-900">{article.title}</h1>
+            {article.excerpt && <p className="mt-3 max-w-3xl text-sm text-slate-700">{article.excerpt}</p>}
+            <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-600">
+              <Link href="/blog" className="rounded-full border border-slate-300 bg-white/80 px-3 py-1.5">
+                Back to blog
+              </Link>
+              {article.publishedAt && (
+                <span className="rounded-full border border-slate-300 bg-white/80 px-3 py-1.5">
+                  Published {new Date(article.publishedAt).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          </div>
+        </header>
+
+        <div className="panel p-6">
+          <div className="prose max-w-none whitespace-pre-line text-slate-800 prose-headings:text-slate-900 prose-a:text-primary">
+            {article.content}
+          </div>
         </div>
-        <div className="prose max-w-none whitespace-pre-line text-slate-800">
-          {article.content}
-        </div>
+
         {relatedArticles.length > 0 && (
-          <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-            <h2 className="text-lg font-semibold">Related Articles</h2>
-            <ul className="space-y-2">
+          <section className="panel p-5">
+            <h2 className="text-xl font-semibold text-slate-900">Related Articles</h2>
+            <ul className="mt-3 space-y-3">
               {relatedArticles.map((related) => (
-                <li key={related.id}>
-                  <Link href={`/blog/${related.slug}`} className="text-sky-600">
+                <li key={related.id} className="rounded-xl border border-slate-200 bg-white/80 p-3">
+                  <Link href={`/blog/${related.slug}`} className="font-medium text-primary">
                     {related.title}
                   </Link>
-                  {related.excerpt && (
-                    <p className="text-sm text-slate-600">{related.excerpt}</p>
-                  )}
+                  {related.excerpt && <p className="mt-1 text-sm text-slate-600">{related.excerpt}</p>}
                 </li>
               ))}
             </ul>
@@ -98,11 +114,17 @@ export default async function BlogDetailPage({ params }: Props) {
   if (!fallback) notFound();
 
   return (
-    <article className="mx-auto max-w-3xl space-y-4">
-      <h1 className="text-3xl font-semibold">{fallback.title}</h1>
-      <div className="prose max-w-none whitespace-pre-line text-slate-800">
-        {fallback.content}
+    <article className="mx-auto max-w-4xl space-y-6">
+      <header className="panel overflow-hidden">
+        <div className="bg-gradient-to-r from-primary/15 via-white to-accent/20 p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">Fallback Article</p>
+          <h1 className="heading-display mt-2 text-4xl text-slate-900">{fallback.title}</h1>
+        </div>
+      </header>
+      <div className="panel p-6">
+        <div className="prose max-w-none whitespace-pre-line text-slate-800">{fallback.content}</div>
       </div>
     </article>
   );
 }
+

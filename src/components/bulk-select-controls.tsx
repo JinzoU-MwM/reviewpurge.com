@@ -18,14 +18,14 @@ export function BulkSelectControls({ formId }: Props) {
       <button
         type="button"
         onClick={() => setChecked(formId, true)}
-        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+        className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100"
       >
         Select All On Page
       </button>
       <button
         type="button"
         onClick={() => setChecked(formId, false)}
-        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+        className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100"
       >
         Clear
       </button>
