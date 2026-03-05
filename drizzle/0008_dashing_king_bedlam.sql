@@ -1,0 +1,1 @@
+ALTER TABLE "activity_logs" ADD COLUMN "webhook_latency_ms" integer;

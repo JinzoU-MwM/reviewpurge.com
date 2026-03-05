@@ -6,6 +6,8 @@ const navItems = [
   { href: "/global", label: "Global" },
   { href: "/blog", label: "Blog" },
   { href: "/admin", label: "Admin" },
+  { href: "/admin/users", label: "Users" },
+  { href: "/admin/logs", label: "Logs" },
 ];
 
 export function MainNav() {

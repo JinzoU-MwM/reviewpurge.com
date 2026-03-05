@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "affiliate_program_unique_per_product_region_name" ON "affiliate_programs" USING btree ("product_id","region","program_name");--> statement-breakpoint
+CREATE UNIQUE INDEX "affiliate_program_single_primary_per_product" ON "affiliate_programs" USING btree ("product_id") WHERE "affiliate_programs"."is_primary" = true;

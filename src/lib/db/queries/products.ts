@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
 import { categories, products } from "@/lib/db/schema";
 
@@ -63,6 +63,86 @@ export async function listProducts() {
   }
 }
 
+export async function listProductsPaginated(input: {
+  page: number;
+  pageSize: number;
+  q?: string;
+  published?: "all" | "published" | "draft";
+  sort?: "latest" | "oldest" | "name";
+}) {
+  const db = getDb();
+  if (!db) {
+    return { items: [], total: 0, page: input.page, pageSize: input.pageSize };
+  }
+
+  const query = input.q?.trim() ?? "";
+  const searchClause = query
+    ? or(
+        ilike(products.name, `%${query}%`),
+        ilike(products.slug, `%${query}%`),
+        ilike(products.description, `%${query}%`),
+      )
+    : undefined;
+  const published = input.published ?? "all";
+  const publishClause =
+    published === "published"
+      ? eq(products.isPublished, true)
+      : published === "draft"
+        ? eq(products.isPublished, false)
+        : undefined;
+  const whereClause =
+    searchClause && publishClause
+      ? and(searchClause, publishClause)
+      : searchClause ?? publishClause;
+
+  const safePage = Math.max(1, input.page);
+  const safePageSize = Math.max(1, input.pageSize);
+  const offset = (safePage - 1) * safePageSize;
+  const sort = input.sort ?? "latest";
+  const orderBy =
+    sort === "oldest"
+      ? asc(products.createdAt)
+      : sort === "name"
+        ? asc(products.name)
+        : desc(products.createdAt);
+
+  try {
+    const countRows = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(whereClause);
+    const total = Number(countRows[0]?.count ?? 0);
+
+    const items = await db.query.products.findMany({
+      where: whereClause,
+      columns: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        affiliateUrl: true,
+        isPublished: true,
+        categoryId: true,
+      },
+      orderBy,
+      limit: safePageSize,
+      offset,
+      with: {
+        category: {
+          columns: {
+            slug: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return { items, total, page: safePage, pageSize: safePageSize };
+  } catch {
+    return { items: [], total: 0, page: safePage, pageSize: safePageSize };
+  }
+}
+
 export async function createProduct(input: ProductInput) {
   const db = getDb();
   if (!db) return { ok: false as const, error: "DATABASE_URL is not set." };
@@ -77,6 +157,7 @@ export async function createProduct(input: ProductInput) {
     affiliateUrl: input.affiliateUrl,
     categoryId,
     isPublished: input.isPublished,
+    updatedAt: new Date(),
   });
 
   return { ok: true as const };
@@ -100,6 +181,7 @@ export async function updateProduct(input: ProductInput) {
       affiliateUrl: input.affiliateUrl,
       categoryId,
       isPublished: input.isPublished,
+      updatedAt: new Date(),
     })
     .where(eq(products.id, input.id));
 
@@ -115,6 +197,35 @@ export async function deleteProduct(id: number) {
     return { ok: true as const };
   } catch {
     return { ok: false as const, error: "Failed to delete product." };
+  }
+}
+
+export async function setProductsPublished(ids: number[], isPublished: boolean) {
+  const db = getDb();
+  if (!db) return { ok: false as const, error: "DATABASE_URL is not set." };
+  if (ids.length === 0) return { ok: false as const, error: "No product selected." };
+
+  try {
+    await db
+      .update(products)
+      .set({ isPublished })
+      .where(inArray(products.id, ids));
+    return { ok: true as const };
+  } catch {
+    return { ok: false as const, error: "Failed to update product status." };
+  }
+}
+
+export async function deleteProducts(ids: number[]) {
+  const db = getDb();
+  if (!db) return { ok: false as const, error: "DATABASE_URL is not set." };
+  if (ids.length === 0) return { ok: false as const, error: "No product selected." };
+
+  try {
+    await db.delete(products).where(inArray(products.id, ids));
+    return { ok: true as const };
+  } catch {
+    return { ok: false as const, error: "Failed to delete products." };
   }
 }
 
