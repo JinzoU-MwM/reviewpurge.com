@@ -24,8 +24,6 @@ type Props = {
 };
 
 const PAGE_SIZE = 5;
-const inputClass =
-  "w-full rounded-xl border border-slate-300/80 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 export default async function AdminPage({ searchParams }: Props) {
   const params = await searchParams;
@@ -84,114 +82,80 @@ export default async function AdminPage({ searchParams }: Props) {
 
   return (
     <section className="space-y-6">
-      <div className="panel overflow-hidden">
-        <div className="bg-gradient-to-r from-primary/20 via-white to-accent/25 p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
-            Commerce Console
-          </p>
-          <h1 className="heading-display mt-2 text-3xl text-slate-900">Admin Dashboard</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-700">
+      {/* Header */}
+      <div className="hero-surface p-6 md:p-8">
+        <div className="hero-orb hero-orb-1" />
+        <div className="relative z-10">
+          <p className="section-kicker text-white/70">Commerce Console</p>
+          <h1 className="heading-display mt-2 text-3xl text-white">Admin Dashboard</h1>
+          <p className="mt-2 max-w-2xl text-sm text-emerald-50/80">
             Kelola katalog produk, affiliate program, dan quality control dari satu panel.
           </p>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs">
-            <Link
-              href="/admin/articles"
-              className="rounded-full border border-slate-300 bg-white/80 px-3 py-1.5 text-slate-700"
-            >
-              Articles
-            </Link>
-            <Link
-              href="/admin/users"
-              className="rounded-full border border-slate-300 bg-white/80 px-3 py-1.5 text-slate-700"
-            >
-              Users
-            </Link>
-            <Link
-              href="/admin/logs"
-              className="rounded-full border border-slate-300 bg-white/80 px-3 py-1.5 text-slate-700"
-            >
-              Logs
-            </Link>
-          </div>
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="panel p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Products on this page</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">{products.length}</p>
+      {/* Stats */}
+      <div className="stagger-children grid gap-3 sm:grid-cols-3">
+        <div className="stat-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Products on page</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{products.length}</p>
         </div>
-        <div className="panel p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Total products</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">{total}</p>
+        <div className="stat-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total products</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{total}</p>
         </div>
-        <div className="panel p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Current page</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">{safePage}</p>
+        <div className="stat-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Current page</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{safePage}</p>
         </div>
       </div>
 
-      <form action={createProductAction} className="panel grid gap-3 p-5">
+      {/* Create Product */}
+      <form action={createProductAction} className="panel p-5 space-y-4">
         <input type="hidden" name="returnTo" value={returnTo} />
-        <h2 className="text-lg font-semibold text-slate-900">Create Product</h2>
+        <h2 className="text-lg font-bold text-slate-900">Create Product</h2>
         <div className="grid gap-3 md:grid-cols-2">
-          <input name="name" required placeholder="Product name" className={inputClass} />
-          <input name="slug" required placeholder="product-slug" className={inputClass} />
+          <input name="name" required placeholder="Product name" className="input" />
+          <input name="slug" required placeholder="product-slug" className="input" />
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          <input
-            name="categorySlug"
-            required
-            placeholder="id-produk-tiktok or global-ai-tools"
-            className={inputClass}
-          />
-          <input
-            name="affiliateUrl"
-            type="url"
-            required
-            placeholder="https://affiliate-link.example"
-            className={inputClass}
-          />
+          <input name="categorySlug" required placeholder="id-produk-tiktok or global-ai-tools" className="input" />
+          <input name="affiliateUrl" type="url" required placeholder="https://affiliate-link.example" className="input" />
         </div>
-        <textarea
-          name="description"
-          required
-          placeholder="Short product description"
-          className={`${inputClass} min-h-24`}
-        />
+        <textarea name="description" required placeholder="Short product description" className="input min-h-24 resize-none" />
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" name="isPublished" className="size-4 rounded" />
           Publish now
         </label>
-        <button
-          type="submit"
-          className="w-fit rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
-        >
+        <button type="submit" className="btn btn-primary btn-sm">
           Save Product
         </button>
       </form>
 
+      {/* Product List */}
       <div className="space-y-4">
         {statusLabel[status] && (
-          <p className="rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-700">
+          <div className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm ${status.includes("error") || status === "unauthorized" || status === "rate_limited" || status === "affiliate_url_blocked"
+              ? "border-red-200 bg-red-50 text-red-800"
+              : "border-emerald-200 bg-emerald-50 text-emerald-800"
+            }`}>
+            <span>{status.includes("error") || status === "unauthorized" ? "⚠️" : "✓"}</span>
             {statusLabel[status]}
-          </p>
+          </div>
         )}
 
         <div className="panel space-y-3 p-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">Existing Products</h2>
+            <h2 className="text-lg font-bold text-slate-900">Existing Products</h2>
             <form className="flex flex-wrap items-center gap-2" method="get">
-              <input name="q" defaultValue={q} placeholder="Search product" className={inputClass} />
-              <button type="submit" className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm">
-                Search
-              </button>
-              <select name="published" defaultValue={published} className={inputClass}>
+              <input name="q" defaultValue={q} placeholder="Search product" className="input w-auto" />
+              <button type="submit" className="btn btn-ghost btn-sm">Search</button>
+              <select name="published" defaultValue={published} className="input w-auto">
                 <option value="all">All</option>
                 <option value="published">Published</option>
                 <option value="draft">Draft</option>
               </select>
-              <select name="sort" defaultValue={sort} className={inputClass}>
+              <select name="sort" defaultValue={sort} className="input w-auto">
                 <option value="latest">Latest</option>
                 <option value="oldest">Oldest</option>
                 <option value="name">Name</option>
@@ -200,147 +164,85 @@ export default async function AdminPage({ searchParams }: Props) {
           </div>
 
           {products.length > 0 && (
-            <form
-              id="bulk-products-form"
-              action={bulkProductAction}
-              className="rounded-xl border border-slate-200 bg-white/80 p-3"
-            >
+            <form id="bulk-products-form" action={bulkProductAction} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white/80 p-3">
               <input type="hidden" name="returnTo" value={returnTo} />
-              <div className="flex flex-wrap items-center gap-2">
-                <BulkSelectControls formId="bulk-products-form" />
-                <button
-                  type="submit"
-                  name="bulkAction"
-                  value="publish"
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                >
-                  Publish Selected
-                </button>
-                <button
-                  type="submit"
-                  name="bulkAction"
-                  value="unpublish"
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                >
-                  Unpublish Selected
-                </button>
-                <button
-                  type="submit"
-                  name="bulkAction"
-                  value="delete"
-                  className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white"
-                >
-                  Delete Selected
-                </button>
-              </div>
+              <BulkSelectControls formId="bulk-products-form" />
+              <button type="submit" name="bulkAction" value="publish" className="btn btn-ghost btn-sm">Publish</button>
+              <button type="submit" name="bulkAction" value="unpublish" className="btn btn-ghost btn-sm">Unpublish</button>
+              <button type="submit" name="bulkAction" value="delete" className="btn btn-sm bg-red-600 text-white hover:bg-red-700">Delete</button>
             </form>
           )}
         </div>
 
         {products.length === 0 ? (
-          <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-            No products yet. Add your first product above.
-          </p>
+          <div className="glass-card p-8 text-center">
+            <span className="text-3xl">📦</span>
+            <p className="mt-2 text-sm text-slate-600">No products yet. Add your first product above.</p>
+          </div>
         ) : (
           products.map((product) => (
-            <form
-              key={product.id}
-              action={updateProductAction}
-              className="panel grid gap-3 p-5"
-            >
+            <form key={product.id} action={updateProductAction} className="panel space-y-3 p-5">
               <input type="hidden" name="id" value={product.id} />
               <input type="hidden" name="returnTo" value={returnTo} />
-              <label className="flex items-center gap-2 text-xs text-slate-600">
-                <input type="checkbox" name="ids" value={product.id} form="bulk-products-form" />
-                Select for bulk action
-              </label>
-              <div className="grid gap-3 md:grid-cols-2">
-                <input name="name" defaultValue={product.name} required className={inputClass} />
-                <input name="slug" defaultValue={product.slug} required className={inputClass} />
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 text-xs text-slate-600">
+                  <input type="checkbox" name="ids" value={product.id} form="bulk-products-form" />
+                  Select
+                </label>
+                <span className={`badge ${product.isPublished ? "badge-success" : "badge-neutral"}`}>
+                  {product.isPublished ? "Published" : "Draft"}
+                </span>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                <input
-                  name="categorySlug"
-                  defaultValue={product.category?.slug ?? ""}
-                  required
-                  className={inputClass}
-                />
-                <input
-                  name="affiliateUrl"
-                  defaultValue={product.affiliateUrl}
-                  className={inputClass}
-                />
+                <input name="name" defaultValue={product.name} required className="input" />
+                <input name="slug" defaultValue={product.slug} required className="input" />
               </div>
-              <textarea
-                name="description"
-                defaultValue={product.description}
-                className={`${inputClass} min-h-20`}
-              />
+              <div className="grid gap-3 md:grid-cols-2">
+                <input name="categorySlug" defaultValue={product.category?.slug ?? ""} required className="input" />
+                <input name="affiliateUrl" defaultValue={product.affiliateUrl} className="input" />
+              </div>
+              <textarea name="description" defaultValue={product.description} className="input min-h-20 resize-none" />
               <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  name="isPublished"
-                  defaultChecked={product.isPublished ?? false}
-                />
+                <input type="checkbox" name="isPublished" defaultChecked={product.isPublished ?? false} />
                 Published
               </label>
               <div className="flex items-center gap-2">
-                <button
-                  type="submit"
-                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white"
-                >
-                  Update Product
-                </button>
-                <button
-                  type="submit"
-                  formAction={deleteProductAction}
-                  className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white"
-                >
-                  Delete
-                </button>
+                <button type="submit" className="btn btn-primary btn-sm">Update</button>
+                <button type="submit" formAction={deleteProductAction} className="btn btn-sm bg-red-600 text-white hover:bg-red-700">Delete</button>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-white/70 p-3">
-                <h3 className="text-sm font-semibold text-slate-900">Affiliate Programs</h3>
+              {/* Affiliate Programs */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
+                <h3 className="text-sm font-bold text-slate-900">Affiliate Programs</h3>
                 {(programsByProduct.get(product.id) ?? []).length === 0 ? (
-                  <p className="mt-2 text-xs text-slate-600">No program yet.</p>
+                  <p className="text-xs text-slate-500">No program yet.</p>
                 ) : (
-                  <ul className="mt-2 space-y-2">
+                  <ul className="space-y-2">
                     {(programsByProduct.get(product.id) ?? []).map((program) => (
-                      <li
-                        key={program.id}
-                        className="rounded-lg border border-slate-200 bg-white p-2 text-xs"
-                      >
-                        <p className="font-medium text-slate-900">
-                          {program.programName} ({program.region})
-                          {program.isPrimary ? " [Primary]" : ""}
+                      <li key={program.id} className="rounded-lg border border-slate-200 bg-white p-3 text-xs">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium text-slate-900">{program.programName}</span>
+                          <span className="badge badge-neutral text-[10px]">{program.region}</span>
+                          {program.isPrimary && <span className="badge badge-primary text-[10px]">Primary</span>}
+                        </div>
+                        <p className="mt-1 truncate text-slate-500">{program.affiliateUrl}</p>
+                        <p className="text-slate-500">
+                          status: <span className={program.lastHealthStatus === "healthy" ? "text-emerald-600" : "text-slate-500"}>{program.lastHealthStatus ?? "unchecked"}</span>
                         </p>
-                        <p className="truncate text-slate-600">{program.affiliateUrl}</p>
-                        <p className="text-slate-500">status: {program.lastHealthStatus ?? "unchecked"}</p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           {!program.isPrimary && (
                             <form action={setPrimaryAffiliateProgramAction}>
                               <input type="hidden" name="returnTo" value={returnTo} />
                               <input type="hidden" name="productId" value={product.id} />
                               <input type="hidden" name="programId" value={program.id} />
-                              <button
-                                type="submit"
-                                className="rounded-md border border-slate-300 px-2 py-1 text-xs"
-                              >
-                                Set Primary
-                              </button>
+                              <button type="submit" className="btn btn-ghost btn-sm text-[11px]">Set Primary</button>
                             </form>
                           )}
                           <form action={checkAffiliateProgramHealthAction}>
                             <input type="hidden" name="returnTo" value={returnTo} />
                             <input type="hidden" name="programId" value={program.id} />
                             <input type="hidden" name="affiliateUrl" value={program.affiliateUrl} />
-                            <button
-                              type="submit"
-                              className="rounded-md border border-slate-300 px-2 py-1 text-xs"
-                            >
-                              Check Health
-                            </button>
+                            <button type="submit" className="btn btn-ghost btn-sm text-[11px]">Check Health</button>
                           </form>
                         </div>
                       </li>
@@ -348,76 +250,58 @@ export default async function AdminPage({ searchParams }: Props) {
                   </ul>
                 )}
 
-                <form action={createAffiliateProgramAction} className="mt-3 grid gap-2">
+                <form action={createAffiliateProgramAction} className="grid gap-2 border-t border-slate-200 pt-3">
                   <input type="hidden" name="returnTo" value={returnTo} />
                   <input type="hidden" name="productId" value={product.id} />
-                  <input
-                    name="programName"
-                    required
-                    placeholder="Program name (Shopee, TikTok, etc)"
-                    className={`${inputClass} text-xs`}
-                  />
-                  <select name="region" defaultValue="global" className={`${inputClass} text-xs`}>
+                  <input name="programName" required placeholder="Program name (Shopee, TikTok, etc)" className="input text-xs" />
+                  <select name="region" defaultValue="global" className="input text-xs">
                     <option value="global">Global</option>
                     <option value="indonesia">Indonesia</option>
                   </select>
-                  <input
-                    name="affiliateUrl"
-                    type="url"
-                    required
-                    placeholder="https://affiliate-url"
-                    className={`${inputClass} text-xs`}
-                  />
+                  <input name="affiliateUrl" type="url" required placeholder="https://affiliate-url" className="input text-xs" />
                   <label className="flex items-center gap-2 text-xs text-slate-700">
                     <input type="checkbox" name="isPrimary" />
                     Set as primary
                   </label>
-                  <button
-                    type="submit"
-                    className="w-fit rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white"
-                  >
-                    Add Program
-                  </button>
+                  <button type="submit" className="btn btn-primary btn-sm w-fit text-xs">Add Program</button>
                 </form>
               </div>
             </form>
           ))
         )}
 
+        {/* Pagination */}
         <div className="flex items-center justify-between text-sm text-slate-600">
-          <p>
-            Page {safePage} of {pageCount} ({total} items)
-          </p>
+          <p>Page {safePage} of {pageCount} ({total} items)</p>
           <div className="flex items-center gap-2">
-            <Link
-              href={`/admin?page=${prevPage}${queryQ}${queryPublished}${querySort}`}
-              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5"
-            >
-              Prev
-            </Link>
-            <Link
-              href={`/admin?page=${nextPage}${queryQ}${queryPublished}${querySort}`}
-              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5"
-            >
-              Next
-            </Link>
+            <Link href={`/admin?page=${prevPage}${queryQ}${queryPublished}${querySort}`} className="btn btn-ghost btn-sm">Prev</Link>
+            <Link href={`/admin?page=${nextPage}${queryQ}${queryPublished}${querySort}`} className="btn btn-ghost btn-sm">Next</Link>
           </div>
         </div>
       </div>
 
+      {/* Recent Activity */}
       <div className="panel space-y-3 p-5">
-        <h2 className="text-lg font-semibold text-slate-900">Recent Activity</h2>
+        <h2 className="text-lg font-bold text-slate-900">Recent Activity</h2>
         {logs.length === 0 ? (
           <p className="text-sm text-slate-600">No activity logs yet.</p>
         ) : (
-          <ul className="space-y-2 text-sm text-slate-700">
+          <ul className="space-y-2">
             {logs.map((log) => (
-              <li key={log.id} className="rounded-xl border border-slate-200 bg-white/80 p-3">
-                <p>
-                  <span className="font-medium">{log.action}</span>: {log.message}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {log.actorEmail ?? "unknown"} | {new Date(log.createdAt).toLocaleString()}
+              <li key={log.id} className="rounded-xl border border-slate-200 bg-white/80 p-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <span className={`badge text-[10px] ${log.action.includes("denied") || log.action.includes("blocked")
+                      ? "badge-danger"
+                      : log.action.includes("rate_limited")
+                        ? "badge-warn"
+                        : "badge-neutral"
+                    }`}>
+                    {log.action}
+                  </span>
+                  <span className="text-slate-700">{log.message}</span>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  {log.actorEmail ?? "unknown"} • {new Date(log.createdAt).toLocaleString()}
                 </p>
               </li>
             ))}
@@ -427,4 +311,3 @@ export default async function AdminPage({ searchParams }: Props) {
     </section>
   );
 }
-

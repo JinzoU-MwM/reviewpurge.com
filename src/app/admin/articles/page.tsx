@@ -23,8 +23,6 @@ type Props = {
 };
 
 const PAGE_SIZE = 5;
-const inputClass =
-  "w-full rounded-xl border border-slate-300/80 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 function toDatetimeLocal(value?: Date | null) {
   if (!value) return "";
@@ -78,95 +76,67 @@ export default async function AdminArticlesPage({ searchParams }: Props) {
 
   return (
     <section className="space-y-6">
-      <div className="panel overflow-hidden">
-        <div className="bg-gradient-to-r from-primary/15 via-white to-accent/20 p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
-            Content Studio
-          </p>
-          <h1 className="heading-display mt-2 text-3xl text-slate-900">Article Management</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-700">
+      {/* Header */}
+      <div className="hero-surface p-6 md:p-8">
+        <div className="hero-orb hero-orb-1" />
+        <div className="relative z-10">
+          <p className="section-kicker text-white/70">Content Studio</p>
+          <h1 className="heading-display mt-2 text-3xl text-white">Article Management</h1>
+          <p className="mt-2 max-w-2xl text-sm text-emerald-50/80">
             Kelola pipeline konten SEO: draft, schedule, publish, dan optimasi metadata.
           </p>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs">
-            <Link href="/admin" className="rounded-full border border-slate-300 bg-white/80 px-3 py-1.5 text-slate-700">
-              Products
-            </Link>
-            <Link
-              href="/admin/users"
-              className="rounded-full border border-slate-300 bg-white/80 px-3 py-1.5 text-slate-700"
-            >
-              Users
-            </Link>
-            <Link
-              href="/admin/logs"
-              className="rounded-full border border-slate-300 bg-white/80 px-3 py-1.5 text-slate-700"
-            >
-              Logs
-            </Link>
-          </div>
         </div>
       </div>
 
-      <form action={createArticleAction} className="panel grid gap-3 p-5">
+      {/* Create Article */}
+      <form action={createArticleAction} className="panel p-5 space-y-4">
         <input type="hidden" name="returnTo" value={returnTo} />
-        <h2 className="text-lg font-semibold text-slate-900">Create Article</h2>
+        <h2 className="text-lg font-bold text-slate-900">Create Article</h2>
         <div className="grid gap-3 md:grid-cols-2">
-          <input name="title" required placeholder="Article title" className={inputClass} />
-          <input name="slug" required placeholder="article-slug" className={inputClass} />
+          <input name="title" required placeholder="Article title" className="input" />
+          <input name="slug" required placeholder="article-slug" className="input" />
         </div>
-        <textarea
-          name="excerpt"
-          required
-          placeholder="Short summary"
-          className={`${inputClass} min-h-20`}
-        />
-        <textarea
-          name="content"
-          required
-          placeholder="Main article content"
-          className={`${inputClass} min-h-40`}
-        />
+        <textarea name="excerpt" required placeholder="Short summary" className="input min-h-20 resize-none" />
+        <textarea name="content" required placeholder="Main article content" className="input min-h-40 resize-none" />
         <div className="grid gap-3 md:grid-cols-3">
-          <input name="metaTitle" placeholder="SEO meta title" className={inputClass} />
-          <input name="metaDescription" placeholder="SEO meta description" className={inputClass} />
-          <input name="ogImageUrl" type="url" placeholder="Open Graph image URL" className={inputClass} />
+          <input name="metaTitle" placeholder="SEO meta title" className="input" />
+          <input name="metaDescription" placeholder="SEO meta description" className="input" />
+          <input name="ogImageUrl" type="url" placeholder="Open Graph image URL" className="input" />
         </div>
         <label className="space-y-1 text-sm text-slate-700">
           <span>Schedule publish time (optional)</span>
-          <input name="publishAt" type="datetime-local" className={inputClass} />
+          <input name="publishAt" type="datetime-local" className="input" />
         </label>
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" name="isPublished" className="size-4 rounded" />
           Publish now (if schedule empty or already passed)
         </label>
-        <button
-          type="submit"
-          className="w-fit rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
-        >
-          Save Article
-        </button>
+        <button type="submit" className="btn btn-primary btn-sm">Save Article</button>
       </form>
 
+      {/* Article List */}
       <div className="space-y-4">
         {statusLabel[status] && (
-          <p className="rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-700">
+          <div className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm ${status.includes("error") || status === "unauthorized" || status === "rate_limited"
+              ? "border-red-200 bg-red-50 text-red-800"
+              : "border-emerald-200 bg-emerald-50 text-emerald-800"
+            }`}>
+            <span>{status.includes("error") || status === "unauthorized" ? "⚠️" : "✓"}</span>
             {statusLabel[status]}
-          </p>
+          </div>
         )}
         <div className="panel space-y-3 p-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">Existing Articles</h2>
+            <h2 className="text-lg font-bold text-slate-900">Existing Articles</h2>
             <form className="flex flex-wrap items-center gap-2" method="get">
-              <input name="q" defaultValue={q} placeholder="Search article" className={inputClass} />
-              <button type="submit" className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm">
-                Search
-              </button>
-              <select name="published" defaultValue={published} className={inputClass}>
+              <input name="q" defaultValue={q} placeholder="Search article" className="input w-auto" />
+              <button type="submit" className="btn btn-ghost btn-sm">Search</button>
+              <select name="published" defaultValue={published} className="input w-auto">
                 <option value="all">All</option>
                 <option value="published">Published</option>
                 <option value="draft">Draft</option>
               </select>
-              <select name="sort" defaultValue={sort} className={inputClass}>
+              <select name="sort" defaultValue={sort} className="input w-auto">
                 <option value="latest">Latest</option>
                 <option value="oldest">Oldest</option>
                 <option value="name">Name</option>
@@ -174,168 +144,86 @@ export default async function AdminArticlesPage({ searchParams }: Props) {
             </form>
           </div>
           {articles.length > 0 && (
-            <form
-              id="bulk-articles-form"
-              action={bulkArticleAction}
-              className="rounded-xl border border-slate-200 bg-white/80 p-3"
-            >
+            <form id="bulk-articles-form" action={bulkArticleAction} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white/80 p-3">
               <input type="hidden" name="returnTo" value={returnTo} />
-              <div className="flex flex-wrap items-center gap-2">
-                <BulkSelectControls formId="bulk-articles-form" />
-                <button
-                  type="submit"
-                  name="bulkAction"
-                  value="publish"
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                >
-                  Publish Selected
-                </button>
-                <button
-                  type="submit"
-                  name="bulkAction"
-                  value="unpublish"
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                >
-                  Unpublish Selected
-                </button>
-                <button
-                  type="submit"
-                  name="bulkAction"
-                  value="delete"
-                  className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white"
-                >
-                  Delete Selected
-                </button>
-              </div>
+              <BulkSelectControls formId="bulk-articles-form" />
+              <button type="submit" name="bulkAction" value="publish" className="btn btn-ghost btn-sm">Publish</button>
+              <button type="submit" name="bulkAction" value="unpublish" className="btn btn-ghost btn-sm">Unpublish</button>
+              <button type="submit" name="bulkAction" value="delete" className="btn btn-sm bg-red-600 text-white hover:bg-red-700">Delete</button>
             </form>
           )}
         </div>
 
         {articles.length === 0 ? (
-          <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-            No articles yet. Add your first article above.
-          </p>
+          <div className="glass-card p-8 text-center">
+            <span className="text-3xl">✍️</span>
+            <p className="mt-2 text-sm text-slate-600">No articles yet. Add your first article above.</p>
+          </div>
         ) : (
           articles.map((article) => (
-            <form
-              key={article.id}
-              action={updateArticleAction}
-              className="panel grid gap-3 p-5"
-            >
+            <form key={article.id} action={updateArticleAction} className="panel space-y-3 p-5">
               <input type="hidden" name="id" value={article.id} />
               <input type="hidden" name="returnTo" value={returnTo} />
-              <label className="flex items-center gap-2 text-xs text-slate-600">
-                <input type="checkbox" name="ids" value={article.id} form="bulk-articles-form" />
-                Select for bulk action
-              </label>
-              <div className="grid gap-3 md:grid-cols-2">
-                <input
-                  name="title"
-                  defaultValue={article.title}
-                  required
-                  className={inputClass}
-                />
-                <input name="slug" defaultValue={article.slug} required className={inputClass} />
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 text-xs text-slate-600">
+                  <input type="checkbox" name="ids" value={article.id} form="bulk-articles-form" />
+                  Select
+                </label>
+                <span className={`badge ${article.isPublished ? "badge-success" : "badge-neutral"}`}>
+                  {article.isPublished ? "Published" : "Draft"}
+                </span>
               </div>
-              <textarea
-                name="excerpt"
-                defaultValue={article.excerpt ?? ""}
-                required
-                className={`${inputClass} min-h-20`}
-              />
-              <textarea
-                name="content"
-                defaultValue={article.content}
-                required
-                className={`${inputClass} min-h-40`}
-              />
+              <div className="grid gap-3 md:grid-cols-2">
+                <input name="title" defaultValue={article.title} required className="input" />
+                <input name="slug" defaultValue={article.slug} required className="input" />
+              </div>
+              <textarea name="excerpt" defaultValue={article.excerpt ?? ""} required className="input min-h-20 resize-none" />
+              <textarea name="content" defaultValue={article.content} required className="input min-h-40 resize-none" />
               <div className="grid gap-3 md:grid-cols-3">
-                <input
-                  name="metaTitle"
-                  defaultValue={article.metaTitle ?? ""}
-                  placeholder="SEO meta title"
-                  className={inputClass}
-                />
-                <input
-                  name="metaDescription"
-                  defaultValue={article.metaDescription ?? ""}
-                  placeholder="SEO meta description"
-                  className={inputClass}
-                />
-                <input
-                  name="ogImageUrl"
-                  type="url"
-                  defaultValue={article.ogImageUrl ?? ""}
-                  placeholder="Open Graph image URL"
-                  className={inputClass}
-                />
+                <input name="metaTitle" defaultValue={article.metaTitle ?? ""} placeholder="SEO meta title" className="input" />
+                <input name="metaDescription" defaultValue={article.metaDescription ?? ""} placeholder="SEO meta description" className="input" />
+                <input name="ogImageUrl" type="url" defaultValue={article.ogImageUrl ?? ""} placeholder="Open Graph image URL" className="input" />
               </div>
               <label className="space-y-1 text-sm text-slate-700">
                 <span>Schedule publish time (optional)</span>
-                <input
-                  name="publishAt"
-                  type="datetime-local"
-                  defaultValue={toDatetimeLocal(article.publishAt)}
-                  className={inputClass}
-                />
+                <input name="publishAt" type="datetime-local" defaultValue={toDatetimeLocal(article.publishAt)} className="input" />
               </label>
               <label className="flex items-center gap-2 text-sm text-slate-700">
                 <input type="checkbox" name="isPublished" defaultChecked={article.isPublished} />
                 Published
               </label>
               <div className="flex items-center gap-2">
-                <button
-                  type="submit"
-                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white"
-                >
-                  Update Article
-                </button>
-                <button
-                  type="submit"
-                  formAction={deleteArticleAction}
-                  className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white"
-                >
-                  Delete
-                </button>
+                <button type="submit" className="btn btn-primary btn-sm">Update</button>
+                <button type="submit" formAction={deleteArticleAction} className="btn btn-sm bg-red-600 text-white hover:bg-red-700">Delete</button>
               </div>
             </form>
           ))
         )}
 
         <div className="flex items-center justify-between text-sm text-slate-600">
-          <p>
-            Page {safePage} of {pageCount} ({total} items)
-          </p>
+          <p>Page {safePage} of {pageCount} ({total} items)</p>
           <div className="flex items-center gap-2">
-            <Link
-              href={`/admin/articles?page=${prevPage}${queryQ}${queryPublished}${querySort}`}
-              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5"
-            >
-              Prev
-            </Link>
-            <Link
-              href={`/admin/articles?page=${nextPage}${queryQ}${queryPublished}${querySort}`}
-              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5"
-            >
-              Next
-            </Link>
+            <Link href={`/admin/articles?page=${prevPage}${queryQ}${queryPublished}${querySort}`} className="btn btn-ghost btn-sm">Prev</Link>
+            <Link href={`/admin/articles?page=${nextPage}${queryQ}${queryPublished}${querySort}`} className="btn btn-ghost btn-sm">Next</Link>
           </div>
         </div>
       </div>
 
+      {/* Recent Activity */}
       <div className="panel space-y-3 p-5">
-        <h2 className="text-lg font-semibold text-slate-900">Recent Activity</h2>
+        <h2 className="text-lg font-bold text-slate-900">Recent Activity</h2>
         {logs.length === 0 ? (
           <p className="text-sm text-slate-600">No activity logs yet.</p>
         ) : (
-          <ul className="space-y-2 text-sm text-slate-700">
+          <ul className="space-y-2">
             {logs.map((log) => (
-              <li key={log.id} className="rounded-xl border border-slate-200 bg-white/80 p-3">
-                <p>
-                  <span className="font-medium">{log.action}</span>: {log.message}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {log.actorEmail ?? "unknown"} | {new Date(log.createdAt).toLocaleString()}
+              <li key={log.id} className="rounded-xl border border-slate-200 bg-white/80 p-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <span className="badge badge-neutral text-[10px]">{log.action}</span>
+                  <span className="text-slate-700">{log.message}</span>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  {log.actorEmail ?? "unknown"} • {new Date(log.createdAt).toLocaleString()}
                 </p>
               </li>
             ))}
@@ -345,4 +233,3 @@ export default async function AdminArticlesPage({ searchParams }: Props) {
     </section>
   );
 }
-

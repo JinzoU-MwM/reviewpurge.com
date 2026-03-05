@@ -1,5 +1,4 @@
-﻿import Link from "next/link";
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import {
   setAdminUserActiveAction,
   upsertAdminUserAction,
@@ -11,9 +10,6 @@ import { canAccessAdminPath } from "@/lib/security/access";
 type Props = {
   searchParams: Promise<{ status?: string }>;
 };
-
-const inputClass =
-  "w-full rounded-xl border border-slate-300/80 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 export default async function AdminUsersPage({ searchParams }: Props) {
   const { role } = await getCurrentAdminIdentity();
@@ -36,123 +32,101 @@ export default async function AdminUsersPage({ searchParams }: Props) {
 
   return (
     <section className="space-y-6">
-      <div className="panel overflow-hidden">
-        <div className="bg-gradient-to-r from-primary/15 via-white to-accent/20 p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
-            Access Control
-          </p>
-          <h1 className="heading-display mt-2 text-3xl text-slate-900">Admin Users</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-700">
+      {/* Header */}
+      <div className="hero-surface p-6 md:p-8">
+        <div className="hero-orb hero-orb-1" />
+        <div className="relative z-10">
+          <p className="section-kicker text-white/70">Access Control</p>
+          <h1 className="heading-display mt-2 text-3xl text-white">Admin Users</h1>
+          <p className="mt-2 max-w-2xl text-sm text-emerald-50/80">
             Kelola akses owner dan editor dengan kontrol yang lebih jelas, aman, dan cepat.
           </p>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs">
-            <Link
-              href="/admin"
-              className="rounded-full border border-slate-300 bg-white/80 px-3 py-1.5 text-slate-700"
-            >
-              Products
-            </Link>
-            <Link
-              href="/admin/articles"
-              className="rounded-full border border-slate-300 bg-white/80 px-3 py-1.5 text-slate-700"
-            >
-              Articles
-            </Link>
-            <Link
-              href="/admin/logs"
-              className="rounded-full border border-slate-300 bg-white/80 px-3 py-1.5 text-slate-700"
-            >
-              Logs
-            </Link>
-          </div>
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="panel p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Total Users</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">{users.length}</p>
+      {/* Stats */}
+      <div className="stagger-children grid gap-3 sm:grid-cols-3">
+        <div className="stat-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Users</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{users.length}</p>
         </div>
-        <div className="panel p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Active Users</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">{activeUsers}</p>
+        <div className="stat-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Active Users</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{activeUsers}</p>
         </div>
-        <div className="panel p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Owners</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">{ownerUsers}</p>
+        <div className="stat-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Owners</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{ownerUsers}</p>
         </div>
       </div>
 
-      <form action={upsertAdminUserAction} className="panel grid gap-4 p-5 md:grid-cols-2">
+      {/* Add/Update User Form */}
+      <form action={upsertAdminUserAction} className="panel p-5 space-y-4">
         <input type="hidden" name="returnTo" value="/admin/users" />
-        <div className="md:col-span-2">
-          <h2 className="text-lg font-semibold text-slate-900">Add or Update User</h2>
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">Add or Update User</h2>
           <p className="text-sm text-slate-600">Gunakan email yang sama untuk update role/status.</p>
         </div>
-        <label className="space-y-1 text-sm text-slate-700">
-          <span>Email</span>
-          <input
-            name="email"
-            type="email"
-            required
-            placeholder="user@email.com"
-            className={inputClass}
-          />
-        </label>
-        <label className="space-y-1 text-sm text-slate-700">
-          <span>Role</span>
-          <select name="role" defaultValue="editor" className={inputClass}>
-            <option value="owner">Owner</option>
-            <option value="editor">Editor</option>
-          </select>
-        </label>
-        <label className="flex items-center gap-2 text-sm text-slate-700 md:col-span-2">
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="space-y-1.5 text-sm text-slate-700">
+            <span className="font-medium">Email</span>
+            <input name="email" type="email" required placeholder="user@email.com" className="input" />
+          </label>
+          <label className="space-y-1.5 text-sm text-slate-700">
+            <span className="font-medium">Role</span>
+            <select name="role" defaultValue="editor" className="input">
+              <option value="owner">Owner</option>
+              <option value="editor">Editor</option>
+            </select>
+          </label>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" name="isActive" defaultChecked className="size-4 rounded" />
           Active
         </label>
-        <button
-          type="submit"
-          className="w-fit rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
-        >
-          Save User
-        </button>
+        <button type="submit" className="btn btn-primary btn-sm">Save User</button>
       </form>
 
+      {/* User List */}
       <div className="panel space-y-4 p-5">
         {statusLabel[status] && (
-          <p className="rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-700">
+          <div className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm ${status.includes("error") || status === "unauthorized" || status === "rate_limited" || status === "user_last_owner"
+              ? "border-red-200 bg-red-50 text-red-800"
+              : "border-emerald-200 bg-emerald-50 text-emerald-800"
+            }`}>
+            <span>{status === "user_updated" ? "✓" : "⚠️"}</span>
             {statusLabel[status]}
-          </p>
+          </div>
         )}
-        <h2 className="text-lg font-semibold text-slate-900">Existing Users</h2>
+        <h2 className="text-lg font-bold text-slate-900">Existing Users</h2>
         {users.length === 0 ? (
-          <p className="text-sm text-slate-600">No admin users configured yet.</p>
+          <div className="py-4 text-center text-sm text-slate-500">No admin users configured yet.</div>
         ) : (
           <ul className="space-y-2">
             {users.map((user) => (
-              <li
-                key={user.id}
-                className="rounded-xl border border-slate-200 bg-white/80 p-3 text-sm"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="font-medium text-slate-900">{user.email}</p>
-                    <p className="text-slate-600">
-                      role: {user.role} | status: {user.isActive ? "active" : "inactive"}
-                    </p>
+              <li key={user.id} className="rounded-xl border border-slate-200 bg-white/80 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-sm font-bold text-primary">
+                      {user.email.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-900">{user.email}</p>
+                      <div className="mt-0.5 flex items-center gap-2">
+                        <span className={`badge text-[10px] ${user.role === "owner" ? "badge-accent" : "badge-neutral"}`}>
+                          {user.role}
+                        </span>
+                        <span className={`badge text-[10px] ${user.isActive ? "badge-success" : "badge-danger"}`}>
+                          {user.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <form action={setAdminUserActiveAction}>
                     <input type="hidden" name="returnTo" value="/admin/users" />
                     <input type="hidden" name="id" value={user.id} />
-                    <input
-                      type="hidden"
-                      name="isActive"
-                      value={user.isActive ? "false" : "true"}
-                    />
-                    <button
-                      type="submit"
-                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-100"
-                    >
+                    <input type="hidden" name="isActive" value={user.isActive ? "false" : "true"} />
+                    <button type="submit" className={`btn btn-sm ${user.isActive ? "bg-red-600 text-white hover:bg-red-700" : "btn-primary"}`}>
                       {user.isActive ? "Deactivate" : "Activate"}
                     </button>
                   </form>

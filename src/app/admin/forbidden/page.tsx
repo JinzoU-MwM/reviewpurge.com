@@ -2,37 +2,31 @@
 
 export default function AdminForbiddenPage() {
   return (
-    <section className="mx-auto max-w-2xl space-y-6">
+    <section className="mx-auto max-w-md space-y-6 pt-12 text-center">
       <div className="panel overflow-hidden">
-        <div className="bg-gradient-to-r from-red-900/85 via-rose-800/85 to-slate-900/85 p-6 text-white">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Permission Check</p>
-          <h1 className="heading-display mt-2 text-3xl">Access Forbidden</h1>
-          <p className="mt-2 text-sm text-white/80">
+        <div className="bg-gradient-to-r from-red-900/90 via-rose-800/90 to-slate-900/90 p-8 text-white">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-3xl backdrop-blur">
+            🛡️
+          </div>
+          <h1 className="heading-display mt-4 text-3xl">Access Forbidden</h1>
+          <p className="mt-2 text-sm text-white/70">
             Akun Anda belum punya role yang cukup untuk membuka halaman admin ini.
           </p>
         </div>
-      </div>
-
-      <div className="panel p-5">
-        <p className="text-sm text-slate-700">
-          Hubungi owner untuk upgrade role jika memang perlu akses ke modul ini.
-        </p>
-        <div className="mt-4 flex items-center gap-3 text-sm">
-          <Link
-            href="/"
-            className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-700"
-          >
-            Go Home
-          </Link>
-          <Link
-            href="/admin"
-            className="rounded-xl bg-slate-900 px-3 py-1.5 text-white"
-          >
-            Back to Admin
-          </Link>
+        <div className="p-6 space-y-4">
+          <p className="text-sm text-slate-600">
+            Hubungi owner untuk upgrade role jika memang perlu akses ke modul ini.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Link href="/" className="btn btn-ghost btn-sm">
+              Go Home
+            </Link>
+            <Link href="/admin" className="btn btn-primary btn-sm">
+              Back to Admin
+            </Link>
+          </div>
         </div>
       </div>
     </section>
   );
 }
-

@@ -2,6 +2,7 @@
 import { Fraunces, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { MainNav } from "@/components/main-nav";
+import { Footer } from "@/components/footer";
 
 const sansFont = Space_Grotesk({
   variable: "--font-sans",
@@ -21,7 +22,7 @@ const displayFont = Fraunces({
 export const metadata: Metadata = {
   metadataBase: new URL("https://reviewpurge.com"),
   title: {
-    default: "ReviewPurge",
+    default: "ReviewPurge — Product Discovery Platform",
     template: "%s | ReviewPurge",
   },
   description:
@@ -34,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${sansFont.variable} ${monoFont.variable} ${displayFont.variable} antialiased`}
       >
@@ -43,21 +44,12 @@ export default function RootLayout({
         </a>
         <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 md:px-6">
           <MainNav />
-          <main id="main-content" className="flex-1 py-10">
+          <main id="main-content" className="flex-1 py-8">
             {children}
           </main>
-          <footer className="mt-10 border-t border-slate-300/60 py-6 text-sm text-slate-600">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <p>(c) {new Date().getFullYear()} ReviewPurge. All rights reserved.</p>
-              <p className="font-mono text-xs uppercase tracking-wide text-slate-500">
-                Affiliate Intelligence Layer
-              </p>
-            </div>
-          </footer>
         </div>
+        <Footer />
       </body>
     </html>
   );
 }
-
-

@@ -1,4 +1,5 @@
-﻿import Link from "next/link";
+﻿import { PageHero } from "@/components/page-hero";
+import { ProductCard } from "@/components/product-card";
 import { listProductsByRegion } from "@/lib/db/queries/products";
 
 const fallback = [
@@ -15,41 +16,54 @@ export default async function IndonesiaPage() {
   const items =
     products.length > 0
       ? products.map((p) => ({
-          id: p.id,
-          name: p.name,
-          slug: p.slug,
-          description: p.description,
-        }))
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        description: p.description,
+      }))
       : fallback;
 
   return (
-    <section className="space-y-6">
-      <div className="hero-surface p-6 md:p-8">
-        <div className="relative z-10 max-w-3xl">
-          <p className="section-kicker text-white/70">Indonesia Market</p>
-          <h1 className="heading-display mt-2 text-4xl text-white md:text-5xl">High-Intent Local Picks</h1>
-          <p className="mt-2 text-sm text-emerald-50 md:text-base">
-            Kumpulan produk untuk audience Indonesia dengan pola belanja cepat dan repeat demand.
-          </p>
-        </div>
-      </div>
+    <div className="space-y-10">
+      <PageHero
+        kicker="Indonesia Market"
+        title="High-Intent Local Picks"
+        description="Kumpulan produk untuk audience Indonesia dengan pola belanja cepat dan repeat demand."
+        ctas={[
+          { label: "Browse All", href: "#products", variant: "accent" },
+          { label: "Visit Blog", href: "/blog", variant: "outline" },
+        ]}
+      />
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {items.map((item) => (
-          <article key={item.id} className="panel overflow-hidden p-5">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-primary">Indonesia</p>
-            <h2 className="mt-1 text-xl font-semibold text-slate-900">{item.name}</h2>
-            <p className="mt-2 text-sm text-slate-600">{item.description}</p>
-            <Link
-              href={`/go/${item.slug}`}
-              className="mt-5 inline-flex rounded-full border border-primary px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-primary transition hover:bg-primary hover:text-white"
-            >
-              Check Offer
-            </Link>
-          </article>
-        ))}
-      </div>
-    </section>
+      <section id="products" className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="heading-display text-2xl text-slate-900">
+            Products
+          </h2>
+          <span className="badge badge-primary">{items.length} items</span>
+        </div>
+
+        {items.length === 0 ? (
+          <div className="glass-card p-10 text-center">
+            <span className="text-4xl">📦</span>
+            <p className="mt-3 text-sm text-slate-600">
+              Belum ada produk Indonesia. Coming soon!
+            </p>
+          </div>
+        ) : (
+          <div className="stagger-children grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((item) => (
+              <ProductCard
+                key={item.id}
+                name={item.name}
+                slug={item.slug}
+                description={item.description}
+                region="indonesia"
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
-

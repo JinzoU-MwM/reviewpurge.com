@@ -31,8 +31,6 @@ type Props = {
 };
 
 const PAGE_SIZE = 20;
-const inputClass =
-  "rounded-xl border border-slate-300/80 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 function parsePositiveNumber(value: string | undefined, fallback: number) {
   const parsed = Number(value ?? "");
@@ -60,8 +58,8 @@ export default async function AdminLogsPage({ searchParams }: Props) {
   const safePage = Number.isFinite(page) && page > 0 ? page : 1;
   const entityType =
     params.entityType === "product" ||
-    params.entityType === "article" ||
-    params.entityType === "system"
+      params.entityType === "article" ||
+      params.entityType === "system"
       ? params.entityType
       : "all";
   const action = (params.action ?? "").trim();
@@ -151,214 +149,114 @@ export default async function AdminLogsPage({ searchParams }: Props) {
 
   return (
     <section className="space-y-6">
-      <div className="panel overflow-hidden">
-        <div className="bg-gradient-to-r from-slate-900/90 via-slate-800/95 to-primary/90 p-6 text-white">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Observability</p>
-          <h1 className="heading-display mt-2 text-3xl">Activity Logs</h1>
-          <p className="mt-2 max-w-2xl text-sm text-white/80">
+      {/* Header */}
+      <div className="hero-surface p-6 md:p-8">
+        <div className="hero-orb hero-orb-1" />
+        <div className="relative z-10">
+          <p className="section-kicker text-white/70">Observability</p>
+          <h1 className="heading-display mt-2 text-3xl text-white">Activity Logs</h1>
+          <p className="mt-2 max-w-2xl text-sm text-emerald-50/80">
             Audit trail real-time untuk keamanan, webhook delivery, dan perilaku admin.
           </p>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs">
-            <Link href="/admin" className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
-              Products
-            </Link>
-            <Link
-              href="/admin/articles"
-              className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5"
-            >
-              Articles
-            </Link>
-            <Link href="/admin/users" className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
-              Users
-            </Link>
-          </div>
         </div>
       </div>
 
+      {/* Filters */}
       <form method="get" className="panel grid gap-2 p-4 md:grid-cols-4">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Search by message/email"
-          className={`${inputClass} md:col-span-2`}
-        />
-        <select name="entityType" defaultValue={entityType} className={inputClass}>
+        <input name="q" defaultValue={q} placeholder="Search by message/email" className="input md:col-span-2" />
+        <select name="entityType" defaultValue={entityType} className="input">
           <option value="all">All entities</option>
           <option value="product">Product</option>
           <option value="article">Article</option>
           <option value="system">System</option>
         </select>
-        <input name="action" defaultValue={action} placeholder="Action exact" className={inputClass} />
-        <input name="reason" defaultValue={reason} placeholder="Reason exact" className={inputClass} />
-        <input
-          name="minAttemptCount"
-          type="number"
-          min={0}
-          defaultValue={safeMinAttemptCount || ""}
-          placeholder="Min attempts"
-          className={inputClass}
-        />
-        <input
-          name="minWebhookLatencyMs"
-          type="number"
-          min={0}
-          defaultValue={safeMinWebhookLatencyMs || ""}
-          placeholder="Min latency ms"
-          className={inputClass}
-        />
-        <input
-          name="webhookStatusCode"
-          type="number"
-          min={100}
-          max={599}
-          defaultValue={safeWebhookStatusCode || ""}
-          placeholder="Status code"
-          className={inputClass}
-        />
+        <input name="action" defaultValue={action} placeholder="Action exact" className="input" />
+        <input name="reason" defaultValue={reason} placeholder="Reason exact" className="input" />
+        <input name="minAttemptCount" type="number" min={0} defaultValue={safeMinAttemptCount || ""} placeholder="Min attempts" className="input" />
+        <input name="minWebhookLatencyMs" type="number" min={0} defaultValue={safeMinWebhookLatencyMs || ""} placeholder="Min latency ms" className="input" />
+        <input name="webhookStatusCode" type="number" min={100} max={599} defaultValue={safeWebhookStatusCode || ""} placeholder="Status code" className="input" />
         <div className="md:col-span-4 flex flex-wrap gap-2">
-          <button
-            type="submit"
-            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
-          >
-            Apply Filters
-          </button>
-          <Link
-            href={`/admin/logs?page=1${queryQ}${queryEntity}&action=security_alert_sent`}
-            className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs text-emerald-800"
-          >
-            Sent
-          </Link>
-          <Link
-            href={`/admin/logs?page=1${queryQ}${queryEntity}&action=security_alert_failed`}
-            className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-800"
-          >
-            Failed
-          </Link>
-          <Link
-            href={`/admin/logs?page=1${queryQ}${queryEntity}&action=security_alert_skipped`}
-            className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800"
-          >
-            Skipped
-          </Link>
-          <Link
-            href={`/admin/logs?page=1${queryQ}${queryEntity}&action=security_alert_failed&minAttemptCount=2`}
-            className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-xs text-rose-800"
-          >
-            Failed 2+ attempts
-          </Link>
-          <Link
-            href={`/admin/logs?page=1${queryQ}${queryEntity}&minWebhookLatencyMs=3000`}
-            className="rounded-xl border border-fuchsia-300 bg-fuchsia-50 px-3 py-2 text-xs text-fuchsia-800"
-          >
-            Latency 3000ms+
-          </Link>
+          <button type="submit" className="btn btn-primary btn-sm">Apply Filters</button>
+          <Link href={`/admin/logs?page=1${queryQ}${queryEntity}&action=security_alert_sent`} className="badge badge-success py-1.5 px-3">Sent</Link>
+          <Link href={`/admin/logs?page=1${queryQ}${queryEntity}&action=security_alert_failed`} className="badge badge-danger py-1.5 px-3">Failed</Link>
+          <Link href={`/admin/logs?page=1${queryQ}${queryEntity}&action=security_alert_skipped`} className="badge badge-warn py-1.5 px-3">Skipped</Link>
+          <Link href={`/admin/logs?page=1${queryQ}${queryEntity}&action=security_alert_failed&minAttemptCount=2`} className="badge badge-danger py-1.5 px-3">Failed 2+</Link>
+          <Link href={`/admin/logs?page=1${queryQ}${queryEntity}&minWebhookLatencyMs=3000`} className="badge badge-accent py-1.5 px-3">Latency 3s+</Link>
         </div>
       </form>
 
+      {/* Warning Banners */}
       {triggeredAlerts.length > 0 && (
-        <div className="panel border-amber-300 bg-amber-50 p-4">
-          <p className="text-sm font-semibold text-amber-900">
-            Security warning: threshold exceeded in last 24h
-          </p>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="font-bold text-amber-900">⚠️ Security warning: threshold exceeded (24h)</p>
           <ul className="mt-2 space-y-1 text-xs text-amber-800">
             {triggeredAlerts.map((item) => (
               <li key={item.key}>
                 {item.label}: {item.value} (threshold {item.threshold}){" "}
-                <Link
-                  href={`/admin/logs?page=1${baseQuery}&action=${item.action}`}
-                  className="font-medium text-amber-900 underline"
-                >
-                  view
-                </Link>
+                <Link href={`/admin/logs?page=1${baseQuery}&action=${item.action}`} className="font-bold text-amber-900 underline">view</Link>
               </li>
             ))}
           </ul>
         </div>
       )}
       {isDeliveryFailureRateAlert && (
-        <div className="panel border-red-300 bg-red-50 p-4">
-          <p className="text-sm font-semibold text-red-900">
-            Delivery warning: webhook failure rate is high in last 24h
-          </p>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+          <p className="font-bold text-red-900">🚨 Delivery warning: high webhook failure rate (24h)</p>
           <p className="mt-1 text-xs text-red-800">
-            Failure rate {deliveryFailureRate24h.toFixed(1)}% (threshold {deliveryFailureRateThreshold}%);
-            failed {delivery.failed24h} of {deliveryAttempted24h} attempts.
+            Failure rate {deliveryFailureRate24h.toFixed(1)}% (threshold {deliveryFailureRateThreshold}%); failed {delivery.failed24h} of {deliveryAttempted24h} attempts.
           </p>
-          <Link
-            href={`/admin/logs?page=1${baseQuery}&action=security_alert_failed`}
-            className="mt-2 inline-block text-xs font-medium text-red-900 underline"
-          >
-            View failed deliveries
-          </Link>
+          <Link href={`/admin/logs?page=1${baseQuery}&action=security_alert_failed`} className="mt-2 inline-block text-xs font-bold text-red-900 underline">View failed</Link>
         </div>
       )}
       {isWebhookP95Alert && (
-        <div className="panel border-fuchsia-300 bg-fuchsia-50 p-4">
-          <p className="text-sm font-semibold text-fuchsia-900">
-            Delivery warning: webhook p95 latency is high in last 24h
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="font-bold text-amber-900">⏱️ p95 latency warning (24h)</p>
+          <p className="mt-1 text-xs text-amber-800">
+            p95 {Math.round(latency.p95_24h ?? 0)} ms (threshold {webhookP95ThresholdMs} ms); {deliveryAttempted24h} attempts.
           </p>
-          <p className="mt-1 text-xs text-fuchsia-800">
-            p95 {Math.round(latency.p95_24h ?? 0)} ms (threshold {webhookP95ThresholdMs} ms); based on {deliveryAttempted24h} delivery attempts.
-          </p>
-          <Link
-            href={`/admin/logs?page=1${baseQuery}&minWebhookLatencyMs=${webhookP95ThresholdMs}`}
-            className="mt-2 inline-block text-xs font-medium text-fuchsia-900 underline"
-          >
-            View high-latency deliveries
-          </Link>
+          <Link href={`/admin/logs?page=1${baseQuery}&minWebhookLatencyMs=${webhookP95ThresholdMs}`} className="mt-2 inline-block text-xs font-bold text-amber-900 underline">View high-latency</Link>
         </div>
       )}
       {isWebhookP99Critical && (
-        <div className="panel border-red-400 bg-red-50 p-4">
-          <p className="text-sm font-semibold text-red-900">
-            Critical warning: webhook p99 latency is very high in last 24h
-          </p>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+          <p className="font-bold text-red-900">🔴 Critical: p99 latency very high (24h)</p>
           <p className="mt-1 text-xs text-red-800">
-            p99 {Math.round(latency.p99_24h ?? 0)} ms (critical threshold {webhookP99ThresholdMs} ms); based on {deliveryAttempted24h} delivery attempts.
+            p99 {Math.round(latency.p99_24h ?? 0)} ms (threshold {webhookP99ThresholdMs} ms); {deliveryAttempted24h} attempts.
           </p>
-          <Link
-            href={`/admin/logs?page=1${baseQuery}&minWebhookLatencyMs=${webhookP99ThresholdMs}`}
-            className="mt-2 inline-block text-xs font-medium text-red-900 underline"
-          >
-            View critical-latency deliveries
-          </Link>
+          <Link href={`/admin/logs?page=1${baseQuery}&minWebhookLatencyMs=${webhookP99ThresholdMs}`} className="mt-2 inline-block text-xs font-bold text-red-900 underline">View critical</Link>
         </div>
       )}
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <div className="panel p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Denied Actions</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">{stats.denied24h}</p>
+      {/* Security Stats */}
+      <div className="stagger-children grid gap-3 md:grid-cols-3">
+        <div className="stat-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Denied Actions</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{stats.denied24h}</p>
           <p className="text-xs text-slate-500">24h | 7d: {stats.denied7d}</p>
-          <Link href={`/admin/logs?page=1${baseQuery}&action=admin_action_denied`} className="mt-2 inline-block text-xs text-primary">
-            View denied logs
-          </Link>
+          <Link href={`/admin/logs?page=1${baseQuery}&action=admin_action_denied`} className="mt-2 inline-block text-xs font-semibold text-primary">View →</Link>
         </div>
-        <div className="panel p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Rate Limited</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">{stats.rateLimited24h}</p>
+        <div className="stat-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Rate Limited</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{stats.rateLimited24h}</p>
           <p className="text-xs text-slate-500">24h | 7d: {stats.rateLimited7d}</p>
-          <Link href={`/admin/logs?page=1${baseQuery}&action=admin_action_rate_limited`} className="mt-2 inline-block text-xs text-primary">
-            View rate-limited logs
-          </Link>
+          <Link href={`/admin/logs?page=1${baseQuery}&action=admin_action_rate_limited`} className="mt-2 inline-block text-xs font-semibold text-primary">View →</Link>
         </div>
-        <div className="panel p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Blocked URLs</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">{stats.blockedUrl24h}</p>
+        <div className="stat-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Blocked URLs</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{stats.blockedUrl24h}</p>
           <p className="text-xs text-slate-500">24h | 7d: {stats.blockedUrl7d}</p>
-          <Link href={`/admin/logs?page=1${baseQuery}&action=admin_action_blocked_url`} className="mt-2 inline-block text-xs text-primary">
-            View blocked-url logs
-          </Link>
+          <Link href={`/admin/logs?page=1${baseQuery}&action=admin_action_blocked_url`} className="mt-2 inline-block text-xs font-semibold text-primary">View →</Link>
         </div>
       </div>
 
+      {/* Trends */}
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="panel p-4">
-          <h2 className="text-sm font-semibold text-slate-900">Security Trend (Last 7 Days)</h2>
+          <h2 className="font-bold text-slate-900">Security Trend (7 Days)</h2>
           {trend.length === 0 ? (
-            <p className="mt-2 text-sm text-slate-600">No trend data yet.</p>
+            <p className="mt-2 text-sm text-slate-500">No trend data yet.</p>
           ) : (
-            <div className="mt-2 overflow-x-auto">
+            <div className="mt-3 overflow-x-auto">
               <table className="min-w-full text-left text-xs text-slate-700">
                 <thead>
                   <tr className="border-b border-slate-200 text-slate-500">
@@ -371,7 +269,7 @@ export default async function AdminLogsPage({ searchParams }: Props) {
                 <tbody>
                   {trend.map((item) => (
                     <tr key={item.day} className="border-b border-slate-100">
-                      <td className="py-2 pr-4">{item.day}</td>
+                      <td className="py-2 pr-4 font-medium">{item.day}</td>
                       <td className="py-2 pr-4">{item.denied}</td>
                       <td className="py-2 pr-4">{item.rateLimited}</td>
                       <td className="py-2">{item.blockedUrl}</td>
@@ -382,13 +280,12 @@ export default async function AdminLogsPage({ searchParams }: Props) {
             </div>
           )}
         </div>
-
         <div className="panel p-4">
-          <h2 className="text-sm font-semibold text-slate-900">Webhook Delivery Trend (Last 7 Days)</h2>
+          <h2 className="font-bold text-slate-900">Webhook Delivery Trend (7 Days)</h2>
           {deliveryTrend.length === 0 ? (
-            <p className="mt-2 text-sm text-slate-600">No delivery trend data yet.</p>
+            <p className="mt-2 text-sm text-slate-500">No delivery trend data yet.</p>
           ) : (
-            <div className="mt-2 overflow-x-auto">
+            <div className="mt-3 overflow-x-auto">
               <table className="min-w-full text-left text-xs text-slate-700">
                 <thead>
                   <tr className="border-b border-slate-200 text-slate-500">
@@ -401,7 +298,7 @@ export default async function AdminLogsPage({ searchParams }: Props) {
                 <tbody>
                   {deliveryTrend.map((item) => (
                     <tr key={item.day} className="border-b border-slate-100">
-                      <td className="py-2 pr-4">{item.day}</td>
+                      <td className="py-2 pr-4 font-medium">{item.day}</td>
                       <td className="py-2 pr-4">{item.sent}</td>
                       <td className="py-2 pr-4">{item.failed}</td>
                       <td className="py-2">{item.skipped}</td>
@@ -414,129 +311,122 @@ export default async function AdminLogsPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <div className="panel p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Webhook Sent</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">{delivery.sent24h}</p>
+      {/* Delivery Stats */}
+      <div className="stagger-children grid gap-3 md:grid-cols-3">
+        <div className="stat-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Webhook Sent</p>
+          <p className="mt-1 text-2xl font-bold text-emerald-700">{delivery.sent24h}</p>
           <p className="text-xs text-slate-500">24h | 7d: {delivery.sent7d}</p>
         </div>
-        <div className="panel p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Webhook Failed</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">{delivery.failed24h}</p>
+        <div className="stat-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Webhook Failed</p>
+          <p className="mt-1 text-2xl font-bold text-red-700">{delivery.failed24h}</p>
           <p className="text-xs text-slate-500">24h | 7d: {delivery.failed7d}</p>
         </div>
-        <div className="panel p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Webhook Skipped</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">{delivery.skipped24h}</p>
+        <div className="stat-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Webhook Skipped</p>
+          <p className="mt-1 text-2xl font-bold text-amber-700">{delivery.skipped24h}</p>
           <p className="text-xs text-slate-500">24h | 7d: {delivery.skipped7d}</p>
         </div>
       </div>
 
+      {/* Alert Status & Latency */}
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="panel p-4">
-          <h2 className="text-sm font-semibold text-slate-900">Webhook Alert Status</h2>
+          <h2 className="font-bold text-slate-900">Webhook Alert Status</h2>
           {alertStatus.lastOutcome ? (
-            <div className="mt-2 space-y-1 text-sm text-slate-700">
-              <p>
-                Last outcome: <span className="font-medium">{alertStatus.lastOutcome.action}</span>
-              </p>
+            <div className="mt-3 space-y-2 text-sm text-slate-700">
+              <div className="flex items-center gap-2">
+                <span className={`badge text-[10px] ${alertStatus.lastOutcome.action === "security_alert_sent" ? "badge-success"
+                    : alertStatus.lastOutcome.action === "security_alert_skipped" ? "badge-warn"
+                      : "badge-danger"
+                  }`}>{alertStatus.lastOutcome.action}</span>
+              </div>
               <p className="text-xs text-slate-500">{alertStatus.lastOutcome.message}</p>
-              <p className="text-xs text-slate-500">
-                {new Date(alertStatus.lastOutcome.createdAt).toLocaleString()}
-              </p>
+              <p className="text-xs text-slate-500">{new Date(alertStatus.lastOutcome.createdAt).toLocaleString()}</p>
               {(typeof alertStatus.lastOutcome.attemptCount === "number" ||
                 typeof alertStatus.lastOutcome.webhookStatusCode === "number" ||
                 typeof alertStatus.lastOutcome.webhookLatencyMs === "number") && (
-                <p className="text-xs text-slate-500">
-                  {typeof alertStatus.lastOutcome.attemptCount === "number"
-                    ? `attemptCount=${alertStatus.lastOutcome.attemptCount} `
-                    : ""}
-                  {typeof alertStatus.lastOutcome.webhookStatusCode === "number"
-                    ? `webhookStatusCode=${alertStatus.lastOutcome.webhookStatusCode}`
-                    : ""}
-                  {typeof alertStatus.lastOutcome.webhookLatencyMs === "number"
-                    ? ` latencyMs=${alertStatus.lastOutcome.webhookLatencyMs}`
-                    : ""}
-                </p>
-              )}
+                  <p className="font-mono text-xs text-slate-500">
+                    {typeof alertStatus.lastOutcome.attemptCount === "number" ? `attempts=${alertStatus.lastOutcome.attemptCount} ` : ""}
+                    {typeof alertStatus.lastOutcome.webhookStatusCode === "number" ? `status=${alertStatus.lastOutcome.webhookStatusCode} ` : ""}
+                    {typeof alertStatus.lastOutcome.webhookLatencyMs === "number" ? `latency=${alertStatus.lastOutcome.webhookLatencyMs}ms` : ""}
+                  </p>
+                )}
               <p className="text-xs text-slate-500">
-                Cooldown configured: {Math.ceil(cooldownMs / 60000)} minute(s)
+                Cooldown: {Math.ceil(cooldownMs / 60000)} min(s)
               </p>
               <p className="text-xs text-slate-500">
                 {alertStatus.lastOutcome.action === "security_alert_sent"
-                  ? "Last send succeeded; subsequent sends may be skipped during cooldown window."
+                  ? "Last send succeeded; subsequent sends may be skipped during cooldown."
                   : alertStatus.lastOutcome.action === "security_alert_skipped"
-                    ? "Last cron run skipped sending (no breach or cooldown active)."
-                    : "Last send attempt failed; next cron run will retry when breach remains."}
+                    ? "Last run skipped (no breach or cooldown active)."
+                    : "Last send failed; next run will retry when breach remains."}
               </p>
             </div>
           ) : (
-            <p className="mt-2 text-sm text-slate-600">No webhook alert events yet.</p>
+            <p className="mt-2 text-sm text-slate-500">No webhook alert events yet.</p>
           )}
         </div>
 
         <div className="panel p-4">
-          <h2 className="text-sm font-semibold text-slate-900">Webhook Latency Percentiles</h2>
+          <h2 className="font-bold text-slate-900">Webhook Latency Percentiles</h2>
           <p className="mt-1 text-xs text-slate-500">
             Health:{" "}
-            {isWebhookP99Critical
-              ? "critical (p99 breach)"
-              : isWebhookP95Alert
-                ? "warn (p95 breach)"
-                : "normal"}
+            <span className={`font-semibold ${isWebhookP99Critical ? "text-red-700" : isWebhookP95Alert ? "text-amber-700" : "text-emerald-700"}`}>
+              {isWebhookP99Critical ? "critical (p99 breach)" : isWebhookP95Alert ? "warn (p95 breach)" : "normal"}
+            </span>
           </p>
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             <div className="rounded-xl border border-slate-200 bg-white/80 p-3">
-              <p className="text-xs uppercase tracking-wide text-slate-500">24h</p>
-              <p className="text-sm text-slate-700">p50: {formatMs(latency.p50_24h)}</p>
-              <p className="text-sm text-slate-700">p95: {formatMs(latency.p95_24h)}</p>
-              <p className="text-sm text-slate-700">p99: {formatMs(latency.p99_24h)}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">24h</p>
+              <p className="mt-1 font-mono text-sm text-slate-700">p50: {formatMs(latency.p50_24h)}</p>
+              <p className="font-mono text-sm text-slate-700">p95: {formatMs(latency.p95_24h)}</p>
+              <p className="font-mono text-sm text-slate-700">p99: {formatMs(latency.p99_24h)}</p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white/80 p-3">
-              <p className="text-xs uppercase tracking-wide text-slate-500">7d</p>
-              <p className="text-sm text-slate-700">p50: {formatMs(latency.p50_7d)}</p>
-              <p className="text-sm text-slate-700">p95: {formatMs(latency.p95_7d)}</p>
-              <p className="text-sm text-slate-700">p99: {formatMs(latency.p99_7d)}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">7d</p>
+              <p className="mt-1 font-mono text-sm text-slate-700">p50: {formatMs(latency.p50_7d)}</p>
+              <p className="font-mono text-sm text-slate-700">p95: {formatMs(latency.p95_7d)}</p>
+              <p className="font-mono text-sm text-slate-700">p99: {formatMs(latency.p99_7d)}</p>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Log Stream */}
       <div className="panel space-y-2 p-4">
-        <h2 className="text-sm font-semibold text-slate-900">Log Stream</h2>
+        <h2 className="font-bold text-slate-900">Log Stream</h2>
         {items.length === 0 ? (
-          <p className="text-sm text-slate-600">No logs found.</p>
+          <p className="text-sm text-slate-500">No logs found.</p>
         ) : (
-          <ul className="space-y-2 text-sm text-slate-700">
+          <ul className="space-y-2">
             {items.map((log) => (
-              <li key={log.id} className="rounded-xl border border-slate-200 bg-white/80 p-3">
-                <p>
-                  <span className="font-medium">{log.action}</span> [{log.entityType}
-                  {log.entityId ? `#${log.entityId}` : ""}] - {log.message}
-                </p>
-                {(log.reason ||
-                  log.permission ||
-                  log.returnTo ||
-                  log.retryAfterMs ||
-                  typeof log.attemptCount === "number" ||
-                  typeof log.webhookStatusCode === "number" ||
+              <li key={log.id} className="rounded-xl border border-slate-200 bg-white/80 p-3 text-sm">
+                <div className="flex flex-wrap items-start gap-2">
+                  <span className={`badge text-[10px] ${log.action.includes("sent") ? "badge-success"
+                      : log.action.includes("failed") || log.action.includes("denied") || log.action.includes("blocked") ? "badge-danger"
+                        : log.action.includes("limited") || log.action.includes("skipped") ? "badge-warn"
+                          : "badge-neutral"
+                    }`}>{log.action}</span>
+                  <span className="badge badge-neutral text-[10px]">{log.entityType}{log.entityId ? `#${log.entityId}` : ""}</span>
+                  <span className="text-slate-700">{log.message}</span>
+                </div>
+                {(log.reason || log.permission || log.returnTo || log.retryAfterMs ||
+                  typeof log.attemptCount === "number" || typeof log.webhookStatusCode === "number" ||
                   typeof log.webhookLatencyMs === "number") && (
-                  <p className="mt-1 text-xs text-slate-500">
-                    {log.reason ? `reason=${log.reason} ` : ""}
-                    {log.permission ? `permission=${log.permission} ` : ""}
-                    {log.returnTo ? `returnTo=${log.returnTo} ` : ""}
-                    {typeof log.retryAfterMs === "number" ? `retryAfterMs=${log.retryAfterMs}` : ""}
-                    {typeof log.attemptCount === "number" ? ` attemptCount=${log.attemptCount}` : ""}
-                    {typeof log.webhookStatusCode === "number"
-                      ? ` webhookStatusCode=${log.webhookStatusCode}`
-                      : ""}
-                    {typeof log.webhookLatencyMs === "number"
-                      ? ` webhookLatencyMs=${log.webhookLatencyMs}`
-                      : ""}
-                  </p>
-                )}
-                <p className="text-xs text-slate-500">
-                  {log.actorEmail ?? "unknown"} | {new Date(log.createdAt).toLocaleString()}
+                    <p className="mt-1 font-mono text-[11px] text-slate-500">
+                      {log.reason ? `reason=${log.reason} ` : ""}
+                      {log.permission ? `permission=${log.permission} ` : ""}
+                      {log.returnTo ? `returnTo=${log.returnTo} ` : ""}
+                      {typeof log.retryAfterMs === "number" ? `retryAfterMs=${log.retryAfterMs} ` : ""}
+                      {typeof log.attemptCount === "number" ? `attempts=${log.attemptCount} ` : ""}
+                      {typeof log.webhookStatusCode === "number" ? `status=${log.webhookStatusCode} ` : ""}
+                      {typeof log.webhookLatencyMs === "number" ? `latency=${log.webhookLatencyMs}ms` : ""}
+                    </p>
+                  )}
+                <p className="mt-1 text-xs text-slate-500">
+                  {log.actorEmail ?? "unknown"} • {new Date(log.createdAt).toLocaleString()}
                 </p>
               </li>
             ))}
@@ -544,26 +434,14 @@ export default async function AdminLogsPage({ searchParams }: Props) {
         )}
       </div>
 
+      {/* Pagination */}
       <div className="flex items-center justify-between text-sm text-slate-600">
-        <p>
-          Page {safePage} of {pageCount} ({total} items)
-        </p>
+        <p>Page {safePage} of {pageCount} ({total} items)</p>
         <div className="flex items-center gap-2">
-          <Link
-            href={`/admin/logs?page=${prevPage}${queryQ}${queryEntity}${queryAction}${queryReason}${queryMinAttemptCount}${queryMinWebhookLatencyMs}${queryWebhookStatusCode}`}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-1.5"
-          >
-            Prev
-          </Link>
-          <Link
-            href={`/admin/logs?page=${nextPage}${queryQ}${queryEntity}${queryAction}${queryReason}${queryMinAttemptCount}${queryMinWebhookLatencyMs}${queryWebhookStatusCode}`}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-1.5"
-          >
-            Next
-          </Link>
+          <Link href={`/admin/logs?page=${prevPage}${queryQ}${queryEntity}${queryAction}${queryReason}${queryMinAttemptCount}${queryMinWebhookLatencyMs}${queryWebhookStatusCode}`} className="btn btn-ghost btn-sm">Prev</Link>
+          <Link href={`/admin/logs?page=${nextPage}${queryQ}${queryEntity}${queryAction}${queryReason}${queryMinAttemptCount}${queryMinWebhookLatencyMs}${queryWebhookStatusCode}`} className="btn btn-ghost btn-sm">Next</Link>
         </div>
       </div>
     </section>
   );
 }
-

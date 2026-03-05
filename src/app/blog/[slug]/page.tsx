@@ -61,49 +61,75 @@ export default async function BlogDetailPage({ params }: Props) {
     };
 
     return (
-      <article className="mx-auto max-w-4xl space-y-6">
+      <article className="mx-auto max-w-4xl space-y-8">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
 
-        <header className="panel overflow-hidden">
-          <div className="bg-gradient-to-r from-primary/15 via-white to-accent/20 p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">Article</p>
-            <h1 className="heading-display mt-2 text-4xl text-slate-900">{article.title}</h1>
-            {article.excerpt && <p className="mt-3 max-w-3xl text-sm text-slate-700">{article.excerpt}</p>}
-            <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-600">
-              <Link href="/blog" className="rounded-full border border-slate-300 bg-white/80 px-3 py-1.5">
-                Back to blog
+        {/* Article header */}
+        <header className="hero-surface overflow-hidden p-8 md:p-12">
+          <div className="hero-orb hero-orb-1" />
+          <div className="relative z-10 space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href="/blog" className="badge badge-neutral bg-white/20 text-white border-white/20">
+                ← Back to Blog
               </Link>
               {article.publishedAt && (
-                <span className="rounded-full border border-slate-300 bg-white/80 px-3 py-1.5">
-                  Published {new Date(article.publishedAt).toLocaleDateString()}
+                <span className="badge badge-neutral bg-white/15 text-white/80 border-white/15">
+                  {new Date(article.publishedAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
                 </span>
               )}
             </div>
+            <h1 className="heading-display text-3xl text-white md:text-4xl lg:text-5xl reveal-up">
+              {article.title}
+            </h1>
+            {article.excerpt && (
+              <p className="max-w-2xl text-base text-emerald-50/80 reveal-up">
+                {article.excerpt}
+              </p>
+            )}
           </div>
         </header>
 
-        <div className="panel p-6">
-          <div className="prose max-w-none whitespace-pre-line text-slate-800 prose-headings:text-slate-900 prose-a:text-primary">
+        {/* Article body */}
+        <div className="panel p-6 md:p-8 lg:p-10">
+          <div className="prose max-w-none whitespace-pre-line text-slate-800 leading-relaxed prose-headings:heading-display prose-headings:text-slate-900 prose-a:text-primary prose-a:no-underline prose-a:font-medium hover:prose-a:underline">
             {article.content}
           </div>
         </div>
 
+        {/* Related articles */}
         {relatedArticles.length > 0 && (
-          <section className="panel p-5">
-            <h2 className="text-xl font-semibold text-slate-900">Related Articles</h2>
-            <ul className="mt-3 space-y-3">
+          <section className="space-y-4">
+            <h2 className="heading-display text-2xl text-slate-900">
+              Related Articles
+            </h2>
+            <div className="stagger-children grid gap-4 md:grid-cols-3">
               {relatedArticles.map((related) => (
-                <li key={related.id} className="rounded-xl border border-slate-200 bg-white/80 p-3">
-                  <Link href={`/blog/${related.slug}`} className="font-medium text-primary">
+                <Link
+                  key={related.id}
+                  href={`/blog/${related.slug}`}
+                  className="glass-card group p-5 transition-all"
+                >
+                  <h3 className="font-semibold text-slate-900 transition-colors group-hover:text-primary">
                     {related.title}
-                  </Link>
-                  {related.excerpt && <p className="mt-1 text-sm text-slate-600">{related.excerpt}</p>}
-                </li>
+                  </h3>
+                  {related.excerpt && (
+                    <p className="mt-2 line-clamp-2 text-sm text-slate-600">
+                      {related.excerpt}
+                    </p>
+                  )}
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-primary">
+                    Read →
+                  </p>
+                </Link>
               ))}
-            </ul>
+            </div>
           </section>
         )}
       </article>
@@ -114,17 +140,23 @@ export default async function BlogDetailPage({ params }: Props) {
   if (!fallback) notFound();
 
   return (
-    <article className="mx-auto max-w-4xl space-y-6">
-      <header className="panel overflow-hidden">
-        <div className="bg-gradient-to-r from-primary/15 via-white to-accent/20 p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">Fallback Article</p>
-          <h1 className="heading-display mt-2 text-4xl text-slate-900">{fallback.title}</h1>
+    <article className="mx-auto max-w-4xl space-y-8">
+      <header className="hero-surface overflow-hidden p-8 md:p-12">
+        <div className="hero-orb hero-orb-1" />
+        <div className="relative z-10 space-y-4">
+          <Link href="/blog" className="badge badge-neutral bg-white/20 text-white border-white/20">
+            ← Back to Blog
+          </Link>
+          <h1 className="heading-display text-3xl text-white md:text-4xl reveal-up">
+            {fallback.title}
+          </h1>
         </div>
       </header>
-      <div className="panel p-6">
-        <div className="prose max-w-none whitespace-pre-line text-slate-800">{fallback.content}</div>
+      <div className="panel p-6 md:p-8">
+        <div className="prose max-w-none whitespace-pre-line text-slate-800">
+          {fallback.content}
+        </div>
       </div>
     </article>
   );
 }
-
