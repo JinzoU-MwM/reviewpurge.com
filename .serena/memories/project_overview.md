@@ -1,0 +1,6 @@
+- Purpose: ReviewPurge is an affiliate product discovery website for Indonesia and global tools, monetized by affiliate links and AdSense.
+- Core app areas: public discovery pages, SEO blog pages, legal/compliance pages, admin dashboard, and affiliate redirect endpoint.
+- Current state: initial MVP scaffold with static route placeholders and backend foundation for database + tracking.
+- Main routes: `/`, `/indonesia`, `/global`, `/blog`, `/admin`, `/go/[slug]`, and compliance pages (`/about`, `/contact`, `/privacy-policy`, `/terms-of-service`, `/affiliate-disclosure`).
+- Tech stack: Next.js App Router (TypeScript), Tailwind CSS, Supabase helpers, PostgreSQL with Drizzle ORM and drizzle-kit.
+- Deployment target: Vercel-style serverless Next app with Postgres database.

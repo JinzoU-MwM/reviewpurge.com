@@ -1,0 +1,7 @@
+- Language: TypeScript with strict typed modules and explicit exported helpers.
+- Framework conventions: Next.js App Router with file-based routing under `src/app`.
+- Import style: alias imports via `@/*` (e.g. `@/lib/...`, `@/components/...`).
+- UI style: Tailwind utility classes in JSX, simple functional components, default export for route components.
+- Naming: kebab-case filenames, camelCase variables/functions, PascalCase components.
+- Error handling: avoid breaking core user flow (e.g., affiliate click tracking failures are swallowed so redirect still works).
+- Comments: sparse and pragmatic; only short comments where behavior is non-obvious.
