@@ -31,6 +31,12 @@ export const products = pgTable("products", {
   description: text("description").notNull(),
   affiliateUrl: text("affiliate_url").notNull(),
   rating: integer("rating"),
+  rpScoreQuality: integer("rp_score_quality"),
+  rpScoreReputation: integer("rp_score_reputation"),
+  rpScoreValue: integer("rp_score_value"),
+  rpScoreTotal: integer("rp_score_total"),
+  isPurged: boolean("is_purged").notNull().default(false),
+  purgeReason: text("purge_reason"),
   imageUrl: text("image_url"),
   isPublished: boolean("is_published").notNull().default(false),
   categoryId: integer("category_id").references(() => categories.id),
@@ -63,6 +69,9 @@ export const articles = pgTable("articles", {
   isPublished: boolean("is_published").notNull().default(false),
   publishedAt: timestamp("published_at", { withTimezone: true }),
   publishAt: timestamp("publish_at", { withTimezone: true }),
+  reviewedBy: varchar("reviewed_by", { length: 120 }),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  priceCheckedAt: timestamp("price_checked_at", { withTimezone: true }),
   authorId: integer("author_id").references(() => authors.id),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()

@@ -10,6 +10,10 @@ vi.mock("next/navigation", () => ({
   redirect: redirectMock,
 }));
 
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
+
 vi.mock("@/lib/security/admin-auth", () => ({
   getCurrentAdminIdentity: vi.fn(),
 }));
@@ -46,6 +50,7 @@ vi.mock("@/lib/db/queries/affiliate-programs", () => ({
   createAffiliateProgram: vi.fn(async () => ({ ok: true })),
   setPrimaryAffiliateProgram: vi.fn(async () => ({ ok: true })),
   setAffiliateProgramHealth: vi.fn(async () => ({ ok: true })),
+  findAffiliateProgramById: vi.fn(async () => ({ id: 1, affiliateUrl: "https://example.com" })),
 }));
 
 vi.mock("@/lib/db/queries/admin-users", () => ({
@@ -57,7 +62,9 @@ import { getCurrentAdminIdentity } from "@/lib/security/admin-auth";
 import { createActivityLog } from "@/lib/db/queries/activity-logs";
 import { isAffiliateUrlAllowed } from "@/lib/security/affiliate-url";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { findAffiliateProgramById } from "@/lib/db/queries/affiliate-programs";
 import {
+  checkAffiliateProgramHealthAction,
   createProductAction,
   deleteProductAction,
 } from "../actions";
@@ -65,6 +72,7 @@ import {
 describe("admin action security", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("redirects unauthorized destructive action", async () => {
@@ -152,6 +160,72 @@ describe("admin action security", () => {
         action: "admin_action_blocked_url",
         reason: "affiliate_url_blocked",
         entityType: "system",
+      }),
+    );
+  });
+
+  it("uses stored affiliate URL for health check and ignores tampered form URL", async () => {
+    vi.mocked(getCurrentAdminIdentity).mockResolvedValue({
+      email: "owner@example.com",
+      role: "owner",
+    });
+    vi.mocked(checkRateLimit).mockResolvedValue({
+      allowed: true,
+      remaining: 10,
+      retryAfterMs: 0,
+    });
+    vi.mocked(findAffiliateProgramById).mockResolvedValue({
+      id: 7,
+      affiliateUrl: "https://stored.example.com",
+    });
+    vi.mocked(isAffiliateUrlAllowed).mockReturnValue(true);
+    const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const formData = new FormData();
+    formData.set("programId", "7");
+    formData.set("affiliateUrl", "https://tampered.example.com");
+    formData.set("returnTo", "/admin");
+
+    await expect(checkAffiliateProgramHealthAction(formData)).rejects.toThrow(
+      "REDIRECT:/admin?status=program_checked",
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://stored.example.com",
+      expect.objectContaining({ method: "HEAD" }),
+    );
+  });
+
+  it("blocks health check when stored affiliate URL violates allowlist", async () => {
+    vi.mocked(getCurrentAdminIdentity).mockResolvedValue({
+      email: "owner@example.com",
+      role: "owner",
+    });
+    vi.mocked(checkRateLimit).mockResolvedValue({
+      allowed: true,
+      remaining: 10,
+      retryAfterMs: 0,
+    });
+    vi.mocked(findAffiliateProgramById).mockResolvedValue({
+      id: 8,
+      affiliateUrl: "https://blocked.example.com",
+    });
+    vi.mocked(isAffiliateUrlAllowed).mockReturnValue(false);
+    const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const formData = new FormData();
+    formData.set("programId", "8");
+    formData.set("returnTo", "/admin");
+
+    await expect(checkAffiliateProgramHealthAction(formData)).rejects.toThrow(
+      "REDIRECT:/admin?status=affiliate_url_blocked",
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(createActivityLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "admin_action_blocked_url",
+        reason: "affiliate_url_blocked",
       }),
     );
   });

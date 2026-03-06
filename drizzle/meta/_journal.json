@@ -64,6 +64,27 @@
       "when": 1772726626682,
       "tag": "0008_dashing_king_bedlam",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1772798400000,
+      "tag": "0009_soft_gravity",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1772799000000,
+      "tag": "0010_deep_lady_lotus",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1772801400000,
+      "tag": "0011_wild_sleeper",
+      "breakpoints": true
     }
   ]
 }

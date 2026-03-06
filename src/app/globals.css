@@ -838,6 +838,54 @@ a {
   padding: 1.5rem;
 }
 
+/* Admin Collapsible */
+.admin-collapsible {
+  border: 1px solid var(--admin-border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--admin-bg);
+  overflow: hidden;
+}
+
+.admin-collapsible + .admin-collapsible {
+  margin-top: 0.75rem;
+}
+
+.admin-collapsible-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--admin-text);
+  border-bottom: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-collapsible-summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-collapsible-summary::before {
+  content: "+";
+  display: inline-flex;
+  width: 1rem;
+  margin-right: 0.5rem;
+  color: var(--primary-light);
+}
+
+.admin-collapsible[open] .admin-collapsible-summary {
+  border-bottom-color: var(--admin-border-subtle);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.admin-collapsible[open] .admin-collapsible-summary::before {
+  content: "-";
+}
+
+.admin-collapsible-content {
+  padding: 1rem;
+}
+
 /* Admin Stats Grid */
 .admin-stats {
   display: grid;

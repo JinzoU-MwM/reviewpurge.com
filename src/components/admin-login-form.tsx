@@ -9,7 +9,9 @@ type Props = {
 
 export function AdminLoginForm({ nextPath }: Props) {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const canUseSupabase =
@@ -22,16 +24,23 @@ export function AdminLoginForm({ nextPath }: Props) {
 
     setIsLoading(true);
     setMessage("");
+    setIsSuccess(false);
 
     try {
       const supabase = createClient();
-      const redirectTo = `${window.location.origin}${nextPath}`;
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
-        options: { emailRedirectTo: redirectTo },
+        password,
       });
 
-      setMessage(error ? error.message : "Magic link sent. Check your email inbox.");
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
+
+      setIsSuccess(true);
+      setMessage("Login berhasil. Mengarahkan ke dashboard...");
+      window.location.assign(nextPath);
     } finally {
       setIsLoading(false);
     }
@@ -66,8 +75,21 @@ export function AdminLoginForm({ nextPath }: Props) {
             className="admin-input"
             disabled={isLoading}
           />
+        </div>
+        <div className="admin-form-group">
+          <label>Password</label>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Your password"
+            className="admin-input"
+            disabled={isLoading}
+            minLength={8}
+          />
           <p className="text-xs text-[var(--admin-text-dim)] mt-1.5">
-            We will send a secure magic link to this email address.
+            Gunakan kredensial email + password Supabase Auth.
           </p>
         </div>
         <button
@@ -78,20 +100,22 @@ export function AdminLoginForm({ nextPath }: Props) {
           {isLoading ? (
             <>
               <span>WAIT</span>
-              <span>Sending Magic Link...</span>
+              <span>Signing in...</span>
             </>
           ) : (
             <>
               <span>GO</span>
-              <span>Send Magic Link</span>
+              <span>Sign In</span>
             </>
           )}
         </button>
       </form>
 
       {message && (
-        <div className={`admin-banner mt-4 ${message.includes("sent") ? "admin-banner-success" : "admin-banner-danger"}`}>
-          <span className="admin-banner-icon">{message.includes("sent") ? "OK" : "WARN"}</span>
+        <div
+          className={`admin-banner mt-4 ${isSuccess ? "admin-banner-success" : "admin-banner-danger"}`}
+        >
+          <span className="admin-banner-icon">{isSuccess ? "OK" : "WARN"}</span>
           <p aria-live="polite">{message}</p>
         </div>
       )}

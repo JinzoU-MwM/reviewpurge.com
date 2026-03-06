@@ -18,16 +18,16 @@ export function BulkSelectControls({ formId }: Props) {
       <button
         type="button"
         onClick={() => setChecked(formId, true)}
-        className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100"
+        className="admin-btn admin-btn-ghost admin-btn-sm"
       >
-        Select All On Page
+        Pilih Semua
       </button>
       <button
         type="button"
         onClick={() => setChecked(formId, false)}
-        className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100"
+        className="admin-btn admin-btn-ghost admin-btn-sm"
       >
-        Clear
+        Bersihkan
       </button>
     </div>
   );

@@ -11,6 +11,15 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
+function formatDate(value?: Date | null) {
+  if (!value) return "-";
+  return new Date(value).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 const fallbackArticles: Record<string, { title: string; content: string }> = {
   "10-produk-viral-tiktok-2026": {
     title: "10 Produk Viral TikTok 2026",
@@ -59,6 +68,9 @@ export default async function BlogDetailPage({ params }: Props) {
       image: article.ogImageUrl ?? undefined,
       mainEntityOfPage: `https://reviewpurge.com/blog/${article.slug}`,
     };
+    const reviewedBy = article.reviewedBy?.trim() || "Editorial Team";
+    const reviewedAt = article.reviewedAt ?? article.updatedAt ?? null;
+    const priceCheckedAt = article.priceCheckedAt ?? null;
 
     return (
       <article className="mx-auto max-w-4xl space-y-8">
@@ -96,6 +108,20 @@ export default async function BlogDetailPage({ params }: Props) {
                 {article.excerpt}
               </p>
             )}
+            <div className="grid gap-2 rounded-xl border border-white/20 bg-white/10 p-4 text-xs text-emerald-50/95 sm:grid-cols-3">
+              <p>
+                <span className="block uppercase tracking-wider text-white/65">Reviewed by</span>
+                <span className="font-semibold">{reviewedBy}</span>
+              </p>
+              <p>
+                <span className="block uppercase tracking-wider text-white/65">Last reviewed</span>
+                <span className="font-semibold">{formatDate(reviewedAt)}</span>
+              </p>
+              <p>
+                <span className="block uppercase tracking-wider text-white/65">Price checked</span>
+                <span className="font-semibold">{formatDate(priceCheckedAt)}</span>
+              </p>
+            </div>
           </div>
         </header>
 

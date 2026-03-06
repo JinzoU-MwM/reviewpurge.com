@@ -34,7 +34,7 @@ export default async function AdminLoginPage({ searchParams }: Props) {
               </div>
               <h1 className="heading-display mt-4 text-2xl text-white">Admin Login</h1>
               <p className="mt-2 text-sm text-white/60">
-                Secure authentication via magic link
+                Secure authentication via email and password
               </p>
             </div>
           </div>

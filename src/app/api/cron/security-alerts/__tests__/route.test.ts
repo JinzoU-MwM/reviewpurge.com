@@ -5,7 +5,6 @@ vi.mock("@/lib/db/queries/activity-logs", () => ({
   createActivityLog: vi.fn(),
   getActivityLogSecurityStats: vi.fn(),
   getActivityLogSecurityTrend: vi.fn(),
-  getLatestActivityLogByAction: vi.fn(),
   getLatestActivityLogByActionAndReason: vi.fn(),
   getRecentSecurityAlertSentReasons: vi.fn(),
 }));
@@ -23,7 +22,6 @@ import {
   createActivityLog,
   getActivityLogSecurityStats,
   getActivityLogSecurityTrend,
-  getLatestActivityLogByAction,
   getLatestActivityLogByActionAndReason,
   getRecentSecurityAlertSentReasons,
 } from "@/lib/db/queries/activity-logs";
@@ -55,6 +53,10 @@ describe("security alert cron route", () => {
     process.env.SECURITY_ALERT_WEBHOOK_URL_CRITICAL = "";
     process.env.SECURITY_ALERT_CRITICAL_CONSECUTIVE_MIN = "1";
     process.env.SECURITY_ALERT_COOLDOWN_MS = "1800000";
+    delete process.env.SECURITY_ALERT_COOLDOWN_MS_WARN;
+    delete process.env.SECURITY_ALERT_COOLDOWN_MS_CRITICAL;
+    delete process.env.SECURITY_ALERT_SUSTAINED_WINDOW_DAYS;
+    delete process.env.SECURITY_ALERT_SUSTAINED_MIN_BREACH_DAYS;
     process.env.SECURITY_ALERT_SKIP_LOG_WINDOW_MS = "600000";
     process.env.SECURITY_ALERT_WEBHOOK_MAX_ATTEMPTS = "3";
     process.env.SECURITY_ALERT_WEBHOOK_BACKOFF_MS = "1";
@@ -75,7 +77,6 @@ describe("security alert cron route", () => {
       blockedUrl7d: 1,
     });
     vi.mocked(getActivityLogSecurityTrend).mockResolvedValue([]);
-    vi.mocked(getLatestActivityLogByAction).mockResolvedValue(null);
     vi.mocked(getLatestActivityLogByActionAndReason).mockResolvedValue(null);
     vi.mocked(getRecentSecurityAlertSentReasons).mockResolvedValue([]);
     vi.mocked(resolveSecurityAlertThresholds).mockReturnValue({
@@ -114,7 +115,7 @@ describe("security alert cron route", () => {
     );
   });
 
-  it("returns cooldown_active when alert was sent recently", async () => {
+  it("returns cooldown_active when warn alert was sent recently", async () => {
     vi.mocked(evaluateSecurityAlerts).mockReturnValue([
       {
         key: "denied",
@@ -124,11 +125,23 @@ describe("security alert cron route", () => {
         action: "admin_action_denied",
       },
     ]);
-    vi.mocked(getLatestActivityLogByAction).mockResolvedValue({
-      id: 1,
-      message: "sent",
-      createdAt: new Date(Date.now() - 60_000),
-    });
+    process.env.SECURITY_ALERT_COOLDOWN_MS_WARN = "1800000";
+    vi.mocked(getLatestActivityLogByActionAndReason).mockImplementation(
+      async (action, reason) => {
+        if (action === "security_alert_sent" && reason === "threshold_breach_warn") {
+          return {
+            id: 1,
+            reason: "threshold_breach_warn",
+            message: "sent",
+            createdAt: new Date(Date.now() - 60_000),
+          };
+        }
+        return null;
+      },
+    );
+
+    const fetchMock = vi.fn(async () => new Response("ok", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
 
     const response = await POST(makeRequest());
     expect(response.status).toBe(200);
@@ -136,11 +149,93 @@ describe("security alert cron route", () => {
     expect(body.ok).toBe(true);
     expect(body.sent).toBe(false);
     expect(body.reason).toBe("cooldown_active");
+    expect(body.severity).toBe("warn");
+    expect(fetchMock).not.toHaveBeenCalled();
     expect(createActivityLog).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "security_alert_skipped",
         reason: "cooldown_active",
       }),
+    );
+  });
+
+  it("returns cooldown_active for critical severity when critical cooldown is active", async () => {
+    vi.mocked(evaluateSecurityAlerts).mockReturnValue([
+      {
+        key: "denied",
+        label: "Denied actions",
+        value: 50,
+        threshold: 20,
+        action: "admin_action_denied",
+      },
+    ]);
+    process.env.SECURITY_ALERT_COOLDOWN_MS_CRITICAL = "1800000";
+    vi.mocked(getLatestActivityLogByActionAndReason).mockImplementation(
+      async (action, reason) => {
+        if (action === "security_alert_sent" && reason === "threshold_breach_critical") {
+          return {
+            id: 2,
+            reason: "threshold_breach_critical",
+            message: "sent",
+            createdAt: new Date(Date.now() - 60_000),
+          };
+        }
+        return null;
+      },
+    );
+
+    const fetchMock = vi.fn(async () => new Response("ok", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(makeRequest());
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.ok).toBe(true);
+    expect(body.sent).toBe(false);
+    expect(body.reason).toBe("cooldown_active");
+    expect(body.severity).toBe("critical");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("does not apply warn cooldown to critical severity", async () => {
+    vi.mocked(evaluateSecurityAlerts).mockReturnValue([
+      {
+        key: "denied",
+        label: "Denied actions",
+        value: 50,
+        threshold: 20,
+        action: "admin_action_denied",
+      },
+    ]);
+    process.env.SECURITY_ALERT_COOLDOWN_MS_WARN = "1800000";
+    process.env.SECURITY_ALERT_COOLDOWN_MS_CRITICAL = "60000";
+    vi.mocked(getLatestActivityLogByActionAndReason).mockImplementation(
+      async (action, reason) => {
+        if (action === "security_alert_sent" && reason === "threshold_breach_warn") {
+          return {
+            id: 3,
+            reason: "threshold_breach_warn",
+            message: "warn sent",
+            createdAt: new Date(Date.now() - 60_000),
+          };
+        }
+        return null;
+      },
+    );
+
+    const fetchMock = vi.fn(async () => new Response("ok", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(makeRequest());
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.ok).toBe(true);
+    expect(body.sent).toBe(true);
+    expect(body.severity).toBe("critical");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(getLatestActivityLogByActionAndReason).toHaveBeenCalledWith(
+      "security_alert_sent",
+      "threshold_breach_critical",
     );
   });
 
@@ -350,6 +445,90 @@ describe("security alert cron route", () => {
       expect.objectContaining({
         action: "security_alert_sent",
         reason: "threshold_breach_warn",
+      }),
+    );
+  });
+
+  it("supports severity-specific webhook without default URL and logs actual success status", async () => {
+    process.env.SECURITY_ALERT_WEBHOOK_URL = "";
+    process.env.SECURITY_ALERT_WEBHOOK_URL_WARN = "https://warn-only.example.com";
+    process.env.SECURITY_ALERT_WEBHOOK_URL_CRITICAL = "";
+    vi.mocked(evaluateSecurityAlerts).mockReturnValue([
+      {
+        key: "denied",
+        label: "Denied actions",
+        value: 30,
+        threshold: 20,
+        action: "admin_action_denied",
+      },
+    ]);
+
+    const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(makeRequest());
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://warn-only.example.com");
+    expect(createActivityLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "security_alert_sent",
+        webhookStatusCode: 204,
+      }),
+    );
+  });
+
+  it("escalates to critical on sustained multi-day breach even without 2x threshold", async () => {
+    process.env.SECURITY_ALERT_CRITICAL_CONSECUTIVE_MIN = "5";
+    process.env.SECURITY_ALERT_SUSTAINED_WINDOW_DAYS = "3";
+    process.env.SECURITY_ALERT_SUSTAINED_MIN_BREACH_DAYS = "2";
+    process.env.SECURITY_ALERT_WEBHOOK_URL = "https://default.example.com";
+    process.env.SECURITY_ALERT_WEBHOOK_URL_WARN = "https://warn.example.com";
+    process.env.SECURITY_ALERT_WEBHOOK_URL_CRITICAL = "https://critical.example.com";
+    vi.mocked(evaluateSecurityAlerts).mockReturnValue([
+      {
+        key: "denied",
+        label: "Denied actions",
+        value: 30,
+        threshold: 20,
+        action: "admin_action_denied",
+      },
+    ]);
+    vi.mocked(getActivityLogSecurityTrend).mockResolvedValue([
+      { day: "2026-03-06", denied: 25, rateLimited: 5, blockedUrl: 0 },
+      { day: "2026-03-05", denied: 22, rateLimited: 8, blockedUrl: 1 },
+      { day: "2026-03-04", denied: 10, rateLimited: 4, blockedUrl: 0 },
+    ]);
+    vi.mocked(getRecentSecurityAlertSentReasons).mockResolvedValue([
+      "threshold_breach_warn",
+      "threshold_breach_warn",
+      "threshold_breach_warn",
+      "threshold_breach_warn",
+    ]);
+
+    const fetchMock = vi.fn(async () => new Response("ok", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(makeRequest());
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://critical.example.com");
+    const payload = JSON.parse(String(init.body));
+    expect(payload.severity).toBe("critical");
+    expect(payload.sustainedBreach).toEqual(
+      expect.objectContaining({
+        triggered: true,
+        windowDays: 3,
+        minBreachDays: 2,
+        breachedDays: 2,
+      }),
+    );
+    expect(createActivityLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "security_alert_sent",
+        reason: "threshold_breach_critical",
       }),
     );
   });

@@ -1,82 +1,137 @@
-﻿import Link from "next/link";
+import Link from "next/link";
+import { cookies } from "next/headers";
+import { HomeIntentHero } from "@/components/home-intent-hero";
+import { ProductCard } from "@/components/product-card";
 import { StatCard } from "@/components/stat-card";
+import { getPublicTrustSnapshot } from "@/lib/db/queries/products";
+import {
+  TRUST_COPY_COOKIE,
+  isTrustCopyVariant,
+  type TrustCopyVariant,
+} from "@/lib/experiments/trust-copy";
 
 const pillars = [
   {
-    title: "Indonesia Commerce",
+    title: "Lokal & Trending",
     href: "/indonesia",
-    description: "Kurasi produk lokal dengan demand tinggi dan jalur konversi cepat.",
-    tag: "Local",
-    emoji: "🇮🇩",
+    description: "Produk fisik terkurasi dari marketplace Indonesia, fokus value dan jalur beli paling cepat.",
+    tag: "Indonesia",
+    emoji: "ID",
     gradient: "from-emerald-500/10 to-teal-500/10",
   },
   {
-    title: "Global Software",
+    title: "SaaS & AI Tools",
     href: "/global",
-    description: "Tool AI dan SaaS global untuk audience dengan buying power lebih kuat.",
+    description: "Software global untuk kerja, growth, dan automation dengan evaluasi ROI yang lebih jelas.",
     tag: "Global",
-    emoji: "🌐",
+    emoji: "GL",
     gradient: "from-amber-500/10 to-orange-500/10",
   },
   {
-    title: "SEO Editorial",
+    title: "In-Depth Reviews",
     href: "/blog",
-    description: "Mesin konten untuk menangkap intent organik dan memperpanjang funnel.",
-    tag: "Organic",
-    emoji: "✍️",
+    description: "Panduan komparasi detail supaya keputusan beli lebih terukur, bukan ikut hype sesaat.",
+    tag: "Guides",
+    emoji: "RV",
     gradient: "from-violet-500/10 to-purple-500/10",
   },
 ];
 
-const metrics = [
-  { icon: "🔗", label: "Affiliate Programs", value: "Multi-Region", detail: "ID + Global coverage" },
-  { icon: "🛡️", label: "Security", value: "RBAC + Audit", detail: "Role-based access control" },
-  { icon: "🚨", label: "Alerting", value: "Warn + Critical", detail: "Real-time routing" },
-  { icon: "📅", label: "Publishing", value: "Scheduled", detail: "Automated pipeline" },
-];
-
 const howItWorks = [
-  { step: "01", title: "Discover", description: "Temukan produk dan tools terbaik dari database terverifikasi kami." },
-  { step: "02", title: "Compare", description: "Baca review independen dan bandingkan fitur, harga, dan kualitas." },
-  { step: "03", title: "Convert", description: "Klik affiliate link terverifikasi dan dapatkan produk terbaik." },
+  { step: "01", title: "Discover", description: "Temukan shortlist produk yang sudah disaring dari ribuan opsi." },
+  { step: "02", title: "Compare", description: "Baca plus-minus, fitur, dan skor agar evaluasi lebih objektif." },
+  { step: "03", title: "Decide", description: "Lanjut ke merchant terpercaya saat kamu sudah yakin dengan pilihanmu." },
 ];
 
-export default function HomePage() {
+function formatCount(value: number, withPlus = false) {
+  if (value <= 0) return "0";
+  return withPlus ? `${value}+` : `${value}`;
+}
+
+function inferRegionFromCategory(
+  region: "indonesia" | "global" | null | undefined,
+  slug: string | null | undefined,
+): "indonesia" | "global" {
+  if (region === "indonesia" || region === "global") return region;
+  return slug?.startsWith("id-") ? "indonesia" : "global";
+}
+
+function isProgramStatusAvailable(status: string | null | undefined) {
+  return !status || status === "healthy";
+}
+
+function isLinkAvailableForRegion(
+  region: "indonesia" | "global",
+  programs: Array<{
+    region: "indonesia" | "global";
+    isActive: boolean;
+    lastHealthStatus: string | null;
+  }>,
+) {
+  const activePrograms = programs.filter(
+    (program) => program.isActive && program.region === region,
+  );
+  if (activePrograms.length === 0) return true;
+  return activePrograms.some((program) =>
+    isProgramStatusAvailable(program.lastHealthStatus),
+  );
+}
+
+export default async function HomePage() {
+  const cookieStore = await cookies();
+  const preferredIntent = cookieStore.get("rp_intent")?.value;
+  const trustVariantCookie = cookieStore.get(TRUST_COPY_COOKIE)?.value;
+  const snapshot = await getPublicTrustSnapshot(4);
+  const metrics = [
+    {
+      icon: "VP",
+      label: "Verified Picks",
+      value: formatCount(snapshot.publishedCount, true),
+      detail: "Produk yang lolos kurasi publik",
+    },
+    {
+      icon: "IN",
+      label: "Independent Review",
+      value: "100%",
+      detail: "Tanpa sponsored placement",
+    },
+    {
+      icon: "UP",
+      label: "Update Cycle",
+      value: "<24h",
+      detail: "Harga dan offer dipantau rutin",
+    },
+    {
+      icon: "PG",
+      label: "Purged Drafts",
+      value: formatCount(snapshot.purgedCount, true),
+      detail: "Produk yang ditolak dengan alasan objektif",
+    },
+  ];
+
+  const initialIntent = preferredIntent === "global" ? "global" : "indonesia";
+  const initialVariant: TrustCopyVariant =
+    trustVariantCookie && isTrustCopyVariant(trustVariantCookie)
+      ? trustVariantCookie
+      : "control";
+
   return (
     <div className="space-y-12">
-      {/* Hero */}
-      <section className="hero-surface p-8 md:p-12 lg:p-16">
-        <div className="hero-orb hero-orb-1" />
-        <div className="hero-orb hero-orb-2" />
-        <div className="relative z-10 max-w-4xl space-y-6">
-          <p className="section-kicker text-white/70 reveal-up">
-            Affiliate Growth System
-          </p>
-          <h1 className="heading-display text-4xl leading-[1.1] text-white md:text-5xl lg:text-[3.5rem] reveal-up">
-            Website afiliator yang terlihat{" "}
-            <span className="text-amber-300">premium</span>, dipercaya user,
-            dan siap scale.
-          </h1>
-          <p className="max-w-2xl text-base leading-relaxed text-emerald-50/90 md:text-lg reveal-up">
-            ReviewPurge menggabungkan halaman komersial, blog SEO, redirect
-            affiliate, dan observability operasional dalam satu stack yang rapi.
-          </p>
-          <div className="flex flex-wrap gap-3 pt-2 reveal-up">
-            <Link href="/indonesia" className="btn btn-accent">
-              Explore Indonesia Picks
-            </Link>
-            <Link href="/blog" className="btn btn-outline">
-              Read Articles
-            </Link>
-          </div>
-        </div>
-      </section>
+      <HomeIntentHero initialIntent={initialIntent} initialVariant={initialVariant} />
 
       {/* Stats */}
-      <section className="stagger-children grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((item) => (
-          <StatCard key={item.label} {...item} />
-        ))}
+      <section className="space-y-6">
+        <div className="text-center">
+          <p className="section-kicker">Trust Metrics</p>
+          <h2 className="heading-display mt-2 text-3xl text-slate-900 md:text-4xl">
+            Bukti Kurasi, Bukan Klaim Kosong
+          </h2>
+        </div>
+        <div className="stagger-children grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {metrics.map((item) => (
+            <StatCard key={item.label} {...item} />
+          ))}
+        </div>
       </section>
 
       {/* Pillar Categories */}
@@ -84,7 +139,7 @@ export default function HomePage() {
         <div className="text-center">
           <p className="section-kicker">Categories</p>
           <h2 className="heading-display mt-2 text-3xl text-slate-900 md:text-4xl">
-            Explore Our Verticals
+            Pilih Jalur Risetmu
           </h2>
         </div>
         <div className="stagger-children grid gap-5 md:grid-cols-3">
@@ -108,12 +163,98 @@ export default function HomePage() {
                   {item.description}
                 </p>
                 <p className="pt-1 text-xs font-bold uppercase tracking-wider text-primary transition-colors group-hover:text-primary-light">
-                  Open section →
+                  Open section &gt;
                 </p>
               </div>
             </Link>
           ))}
         </div>
+      </section>
+
+      {/* Latest verified picks */}
+      <section className="space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="section-kicker">Live Curation</p>
+            <h2 className="heading-display mt-2 text-3xl text-slate-900 md:text-4xl">
+              Latest Verified Picks
+            </h2>
+          </div>
+          <Link href="/indonesia" className="btn btn-outline btn-sm">
+            Browse all picks
+          </Link>
+        </div>
+        {snapshot.latestVerified.length > 0 ? (
+          <div className="stagger-children grid gap-5 md:grid-cols-2">
+            {snapshot.latestVerified.map((item) => {
+              const region = inferRegionFromCategory(item.category?.region, item.category?.slug);
+              return (
+                <ProductCard
+                  key={item.id}
+                  name={item.name}
+                  slug={item.slug}
+                  description={item.description}
+                  region={region}
+                  rpScoreTotal={item.rpScoreTotal}
+                  rpScoreQuality={item.rpScoreQuality}
+                  rpScoreReputation={item.rpScoreReputation}
+                  rpScoreValue={item.rpScoreValue}
+                  trustCopyVariant={initialVariant}
+                  isLinkAvailable={isLinkAvailableForRegion(region, item.affiliatePrograms ?? [])}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="glass-card p-6">
+            <p className="text-sm text-slate-600">
+              Belum ada produk yang dipublikasikan. Tambahkan produk di dashboard admin
+              lalu publish untuk menampilkan curated picks di homepage.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* The purged */}
+      <section className="space-y-6">
+        <div className="text-center">
+          <p className="section-kicker">The Purged</p>
+          <h2 className="heading-display mt-2 text-3xl text-slate-900 md:text-4xl">
+            Produk Populer yang Sengaja Tidak Kami Rekomendasikan
+          </h2>
+          <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-600">
+            Transparansi kurasi: tidak semua produk populer layak direkomendasikan.
+          </p>
+        </div>
+        {snapshot.latestPurged.length > 0 ? (
+          <div className="stagger-children grid gap-4 md:grid-cols-2">
+            {snapshot.latestPurged.map((item) => (
+              <article key={item.id} className="glass-card p-5">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="badge badge-neutral text-[10px]">
+                    {inferRegionFromCategory(item.category?.region, item.category?.slug) === "indonesia"
+                      ? "ID"
+                      : "Global"}
+                  </span>
+                  <span className="badge badge-neutral text-[10px]">Rejected</span>
+                </div>
+                <h3 className="heading-display text-xl font-semibold text-slate-900">
+                  {item.name}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                  {item.purgeReason ?? "Tidak lolos evaluasi editorial ReviewPurge."}
+                </p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="glass-card p-6">
+            <p className="text-sm text-slate-600">
+              Belum ada entri The Purged. Tandai produk sebagai The Purged di dashboard
+              admin untuk menampilkan alasan penolakan di halaman ini.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* How It Works */}
@@ -146,8 +287,8 @@ export default function HomePage() {
           Dapatkan Rekomendasi Produk Terbaru
         </h2>
         <p className="mx-auto mt-3 max-w-lg text-sm text-slate-600">
-          Subscribe untuk mendapat update produk trending, tools terbaru, dan
-          artikel SEO langsung ke inbox kamu.
+          Dapatkan update shortlist produk, tools baru, dan insight komparasi
+          langsung ke inbox kamu.
         </p>
         <div className="mx-auto mt-6 flex max-w-md gap-2">
           <input

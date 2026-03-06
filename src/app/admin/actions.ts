@@ -8,6 +8,7 @@ import {
 } from "@/lib/db/queries/admin-users";
 import {
   createAffiliateProgram,
+  findAffiliateProgramById,
   setAffiliateProgramHealth,
   setPrimaryAffiliateProgram,
 } from "@/lib/db/queries/affiliate-programs";
@@ -47,6 +48,16 @@ function parseDatetime(value: string) {
   if (!normalized) return null;
   const parsed = new Date(normalized);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function parseScoreComponent(value: string) {
+  const normalized = value.trim();
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) return null;
+  if (parsed < 0) return 0;
+  if (parsed > 100) return 100;
+  return Math.round(parsed);
 }
 
 async function getActorIdentity() {
@@ -136,13 +147,23 @@ export async function createProductAction(formData: FormData) {
     await logBlockedAffiliateUrl({ actorEmail: actor.email, returnTo, affiliateUrl });
     redirect(withStatus(returnTo, "affiliate_url_blocked"));
   }
+  const rpScoreQuality = parseScoreComponent(getString(formData, "rpScoreQuality"));
+  const rpScoreReputation = parseScoreComponent(getString(formData, "rpScoreReputation"));
+  const rpScoreValue = parseScoreComponent(getString(formData, "rpScoreValue"));
+  const purgeReasonInput = getString(formData, "purgeReason");
+  const isPurged = getString(formData, "isPurged") === "on" || purgeReasonInput.length > 0;
   const result = await createProduct({
     name: getString(formData, "name"),
     slug: getString(formData, "slug"),
     description: getString(formData, "description"),
     affiliateUrl,
     categorySlug: getString(formData, "categorySlug"),
-    isPublished: getString(formData, "isPublished") === "on",
+    rpScoreQuality,
+    rpScoreReputation,
+    rpScoreValue,
+    isPurged,
+    purgeReason: isPurged ? purgeReasonInput : null,
+    isPublished: isPurged ? false : getString(formData, "isPublished") === "on",
   });
 
   if (result.ok) {
@@ -150,7 +171,7 @@ export async function createProductAction(formData: FormData) {
       actorEmail: actor.email,
       entityType: "product",
       action: "create",
-      message: `Created product "${getString(formData, "name")}"`,
+      message: `Created product "${getString(formData, "name")}" with RP components q=${rpScoreQuality ?? "-"} r=${rpScoreReputation ?? "-"} v=${rpScoreValue ?? "-"} purge=${isPurged ? "yes" : "no"}`,
     });
     revalidatePath("/admin");
     revalidatePath("/indonesia");
@@ -173,6 +194,11 @@ export async function updateProductAction(formData: FormData) {
     await logBlockedAffiliateUrl({ actorEmail: actor.email, returnTo, affiliateUrl });
     redirect(withStatus(returnTo, "affiliate_url_blocked"));
   }
+  const rpScoreQuality = parseScoreComponent(getString(formData, "rpScoreQuality"));
+  const rpScoreReputation = parseScoreComponent(getString(formData, "rpScoreReputation"));
+  const rpScoreValue = parseScoreComponent(getString(formData, "rpScoreValue"));
+  const purgeReasonInput = getString(formData, "purgeReason");
+  const isPurged = getString(formData, "isPurged") === "on" || purgeReasonInput.length > 0;
 
   const result = await updateProduct({
     id: productId,
@@ -181,7 +207,12 @@ export async function updateProductAction(formData: FormData) {
     description: getString(formData, "description"),
     affiliateUrl,
     categorySlug: getString(formData, "categorySlug"),
-    isPublished: getString(formData, "isPublished") === "on",
+    rpScoreQuality,
+    rpScoreReputation,
+    rpScoreValue,
+    isPurged,
+    purgeReason: isPurged ? purgeReasonInput : null,
+    isPublished: isPurged ? false : getString(formData, "isPublished") === "on",
   });
 
   if (result.ok) {
@@ -190,7 +221,7 @@ export async function updateProductAction(formData: FormData) {
       entityType: "product",
       entityId: productId,
       action: "update",
-      message: `Updated product "${getString(formData, "name")}"`,
+      message: `Updated product "${getString(formData, "name")}" with RP components q=${rpScoreQuality ?? "-"} r=${rpScoreReputation ?? "-"} v=${rpScoreValue ?? "-"} purge=${isPurged ? "yes" : "no"}`,
     });
     revalidatePath("/admin");
     revalidatePath("/indonesia");
@@ -281,6 +312,9 @@ export async function createArticleAction(formData: FormData) {
     metaDescription: getString(formData, "metaDescription") || undefined,
     ogImageUrl: getString(formData, "ogImageUrl") || undefined,
     publishAt: parseDatetime(getString(formData, "publishAt")),
+    reviewedBy: getString(formData, "reviewedBy") || undefined,
+    reviewedAt: parseDatetime(getString(formData, "reviewedAt")),
+    priceCheckedAt: parseDatetime(getString(formData, "priceCheckedAt")),
     isPublished: getString(formData, "isPublished") === "on",
   });
 
@@ -317,6 +351,9 @@ export async function updateArticleAction(formData: FormData) {
     metaDescription: getString(formData, "metaDescription") || undefined,
     ogImageUrl: getString(formData, "ogImageUrl") || undefined,
     publishAt: parseDatetime(getString(formData, "publishAt")),
+    reviewedBy: getString(formData, "reviewedBy") || undefined,
+    reviewedAt: parseDatetime(getString(formData, "reviewedAt")),
+    priceCheckedAt: parseDatetime(getString(formData, "priceCheckedAt")),
     isPublished: getString(formData, "isPublished") === "on",
   });
 
@@ -478,8 +515,15 @@ export async function checkAffiliateProgramHealthAction(formData: FormData) {
   await assertActionRateLimit(actor.email, returnTo);
   await assertPermission(actor.email, actor.role, "programs:write", returnTo);
   const programId = Number(formData.get("programId") ?? 0);
-  const affiliateUrl = getString(formData, "affiliateUrl");
-  if (!programId || !affiliateUrl) redirect(withStatus(returnTo, "program_error"));
+  if (!programId) redirect(withStatus(returnTo, "program_error"));
+
+  const program = await findAffiliateProgramById(programId);
+  if (!program) redirect(withStatus(returnTo, "program_error"));
+  const affiliateUrl = program.affiliateUrl;
+  if (!isAffiliateUrlAllowed(affiliateUrl)) {
+    await logBlockedAffiliateUrl({ actorEmail: actor.email, returnTo, affiliateUrl });
+    redirect(withStatus(returnTo, "affiliate_url_blocked"));
+  }
 
   let status = "unreachable";
   try {

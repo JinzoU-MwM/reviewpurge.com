@@ -14,28 +14,28 @@ type AdminNavItem = {
 const navItems: AdminNavItem[] = [
   {
     href: "/admin",
-    label: "Dashboard",
-    icon: "DB",
-    description: "Products and affiliate programs",
+    label: "Produk",
+    icon: "PR",
+    description: "Katalog dan program affiliate",
   },
   {
     href: "/admin/articles",
-    label: "Articles",
-    icon: "AR",
-    description: "Content management",
+    label: "Artikel",
+    icon: "CT",
+    description: "Konten, draft, dan publish",
   },
   {
     href: "/admin/logs",
     label: "Logs",
     icon: "LG",
-    description: "Activity and security logs",
+    description: "Audit, security, dan webhook",
     requireOwner: false,
   },
   {
     href: "/admin/users",
-    label: "Users",
-    icon: "US",
-    description: "Admin user management",
+    label: "Admin Users",
+    icon: "RB",
+    description: "Role owner/editor",
     requireOwner: true,
   },
 ];
@@ -60,8 +60,8 @@ export async function AdminNav({ currentPath }: { currentPath: string }) {
     <nav className="admin-nav">
       <div className="admin-nav-header">
         <Link href="/admin" className="admin-nav-brand">
-          <span className="admin-nav-brand-icon">AD</span>
-          <span className="admin-nav-brand-text">Admin</span>
+          <span className="admin-nav-brand-icon">RP</span>
+          <span className="admin-nav-brand-text">ReviewPurge Admin</span>
         </Link>
       </div>
       <ul className="admin-nav-list">
@@ -84,8 +84,8 @@ export async function AdminNav({ currentPath }: { currentPath: string }) {
       </ul>
       <div className="admin-nav-footer">
         <Link href="/" className="admin-nav-external">
-          <span>WEB</span>
-          <span>View Site</span>
+          <span>WWW</span>
+          <span>Lihat Website</span>
         </Link>
       </div>
     </nav>

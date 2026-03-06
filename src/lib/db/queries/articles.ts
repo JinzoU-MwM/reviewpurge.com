@@ -12,6 +12,9 @@ export type ArticleInput = {
   metaDescription?: string;
   ogImageUrl?: string;
   publishAt?: Date | null;
+  reviewedBy?: string;
+  reviewedAt?: Date | null;
+  priceCheckedAt?: Date | null;
   isPublished: boolean;
 };
 
@@ -33,6 +36,9 @@ export async function listArticles() {
         isPublished: true,
         publishedAt: true,
         publishAt: true,
+        reviewedBy: true,
+        reviewedAt: true,
+        priceCheckedAt: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -107,6 +113,9 @@ export async function listArticlesPaginated(input: {
         isPublished: true,
         publishedAt: true,
         publishAt: true,
+        reviewedBy: true,
+        reviewedAt: true,
+        priceCheckedAt: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -137,6 +146,9 @@ export async function listPublishedArticles() {
         metaDescription: true,
         ogImageUrl: true,
         publishedAt: true,
+        reviewedBy: true,
+        reviewedAt: true,
+        priceCheckedAt: true,
         createdAt: true,
       },
       orderBy: desc(articles.publishedAt),
@@ -198,6 +210,10 @@ export async function getPublishedArticleBySlug(slug: string) {
         isPublished: true,
         publishedAt: true,
         publishAt: true,
+        reviewedBy: true,
+        reviewedAt: true,
+        priceCheckedAt: true,
+        updatedAt: true,
       },
     });
   } catch {
@@ -241,6 +257,9 @@ export async function createArticle(input: ArticleInput) {
       metaDescription: input.metaDescription ?? null,
       ogImageUrl: input.ogImageUrl ?? null,
       publishAt: input.publishAt ?? null,
+      reviewedBy: input.reviewedBy ?? null,
+      reviewedAt: input.reviewedAt ?? null,
+      priceCheckedAt: input.priceCheckedAt ?? null,
       isPublished: shouldPublish,
       publishedAt: shouldPublish ? new Date() : null,
       updatedAt: new Date(),
@@ -270,6 +289,9 @@ export async function updateArticle(input: ArticleInput) {
         metaDescription: input.metaDescription ?? null,
         ogImageUrl: input.ogImageUrl ?? null,
         publishAt: input.publishAt ?? null,
+        reviewedBy: input.reviewedBy ?? null,
+        reviewedAt: input.reviewedAt ?? null,
+        priceCheckedAt: input.priceCheckedAt ?? null,
         isPublished: shouldPublish,
         publishedAt: shouldPublish ? new Date() : null,
         updatedAt: new Date(),

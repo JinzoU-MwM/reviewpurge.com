@@ -1,8 +1,7 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { Fraunces, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
-import { MainNav } from "@/components/main-nav";
-import { Footer } from "@/components/footer";
+import { AppShell } from "@/components/app-shell";
 
 const sansFont = Space_Grotesk({
   variable: "--font-sans",
@@ -42,13 +41,7 @@ export default function RootLayout({
         <a href="#main-content" className="skip-nav">
           Skip to content
         </a>
-        <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 md:px-6">
-          <MainNav />
-          <main id="main-content" className="flex-1 py-8">
-            {children}
-          </main>
-        </div>
-        <Footer />
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

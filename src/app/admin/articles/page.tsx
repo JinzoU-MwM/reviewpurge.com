@@ -170,6 +170,24 @@ export default async function AdminArticlesPage({ searchParams }: Props) {
                   <label>Schedule Publish Time (optional)</label>
                   <input name="publishAt" type="datetime-local" className="admin-input" />
                 </div>
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Reviewed By</label>
+                    <input
+                      name="reviewedBy"
+                      placeholder="Editor name"
+                      className="admin-input"
+                    />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Reviewed At</label>
+                    <input name="reviewedAt" type="datetime-local" className="admin-input" />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Price Checked At</label>
+                    <input name="priceCheckedAt" type="datetime-local" className="admin-input" />
+                  </div>
+                </div>
                 <label className="admin-checkbox-label">
                   <input type="checkbox" name="isPublished" className="admin-checkbox" />
                   Publish immediately (if schedule empty or already passed)
@@ -279,6 +297,35 @@ export default async function AdminArticlesPage({ searchParams }: Props) {
                           <div className="admin-form-group">
                             <label>Schedule Publish</label>
                             <input name="publishAt" type="datetime-local" defaultValue={toDatetimeLocal(article.publishAt)} className="admin-input" />
+                          </div>
+                          <div className="admin-form-row">
+                            <div className="admin-form-group">
+                              <label>Reviewed By</label>
+                              <input
+                                name="reviewedBy"
+                                defaultValue={article.reviewedBy ?? ""}
+                                placeholder="Editor name"
+                                className="admin-input"
+                              />
+                            </div>
+                            <div className="admin-form-group">
+                              <label>Reviewed At</label>
+                              <input
+                                name="reviewedAt"
+                                type="datetime-local"
+                                defaultValue={toDatetimeLocal(article.reviewedAt)}
+                                className="admin-input"
+                              />
+                            </div>
+                            <div className="admin-form-group">
+                              <label>Price Checked At</label>
+                              <input
+                                name="priceCheckedAt"
+                                type="datetime-local"
+                                defaultValue={toDatetimeLocal(article.priceCheckedAt)}
+                                className="admin-input"
+                              />
+                            </div>
                           </div>
                           
                           <div className="flex flex-wrap items-center gap-3">

@@ -10,7 +10,38 @@ export type ProductInput = {
   affiliateUrl: string;
   categorySlug: string;
   isPublished: boolean;
+  isPurged?: boolean;
+  purgeReason?: string | null;
+  rpScoreQuality?: number | null;
+  rpScoreReputation?: number | null;
+  rpScoreValue?: number | null;
 };
+
+function normalizeScore(value?: number | null) {
+  if (value == null || !Number.isFinite(value)) return null;
+  const rounded = Math.round(value);
+  if (rounded < 0) return 0;
+  if (rounded > 100) return 100;
+  return rounded;
+}
+
+function computeRpScoreTotal(parts: {
+  quality: number | null;
+  reputation: number | null;
+  value: number | null;
+}) {
+  const values = [parts.quality, parts.reputation, parts.value].filter(
+    (item): item is number => item != null,
+  );
+  if (values.length === 0) return null;
+  const sum = values.reduce((acc, item) => acc + item, 0);
+  return Math.round(sum / values.length);
+}
+
+function normalizePurgeReason(value: string | null | undefined) {
+  const normalized = (value ?? "").trim();
+  return normalized.length > 0 ? normalized : null;
+}
 
 async function getOrCreateCategory(categorySlug: string) {
   const db = getDb();
@@ -46,7 +77,13 @@ export async function listProducts() {
         description: true,
         affiliateUrl: true,
         isPublished: true,
+        isPurged: true,
+        purgeReason: true,
         categoryId: true,
+        rpScoreQuality: true,
+        rpScoreReputation: true,
+        rpScoreValue: true,
+        rpScoreTotal: true,
       },
       orderBy: asc(products.createdAt),
       with: {
@@ -122,7 +159,13 @@ export async function listProductsPaginated(input: {
         description: true,
         affiliateUrl: true,
         isPublished: true,
+        isPurged: true,
+        purgeReason: true,
         categoryId: true,
+        rpScoreQuality: true,
+        rpScoreReputation: true,
+        rpScoreValue: true,
+        rpScoreTotal: true,
       },
       orderBy,
       limit: safePageSize,
@@ -149,6 +192,17 @@ export async function createProduct(input: ProductInput) {
 
   const categoryId = await getOrCreateCategory(input.categorySlug);
   if (!categoryId) return { ok: false as const, error: "Failed to resolve category." };
+  const rpScoreQuality = normalizeScore(input.rpScoreQuality);
+  const rpScoreReputation = normalizeScore(input.rpScoreReputation);
+  const rpScoreValue = normalizeScore(input.rpScoreValue);
+  const rpScoreTotal = computeRpScoreTotal({
+    quality: rpScoreQuality,
+    reputation: rpScoreReputation,
+    value: rpScoreValue,
+  });
+  const normalizedPurgeReason = normalizePurgeReason(input.purgeReason);
+  const isPurged = Boolean(input.isPurged) || normalizedPurgeReason != null;
+  const isPublished = isPurged ? false : input.isPublished;
 
   await db.insert(products).values({
     name: input.name,
@@ -156,7 +210,13 @@ export async function createProduct(input: ProductInput) {
     description: input.description,
     affiliateUrl: input.affiliateUrl,
     categoryId,
-    isPublished: input.isPublished,
+    isPublished,
+    isPurged,
+    purgeReason: isPurged ? normalizedPurgeReason : null,
+    rpScoreQuality,
+    rpScoreReputation,
+    rpScoreValue,
+    rpScoreTotal,
     updatedAt: new Date(),
   });
 
@@ -171,6 +231,17 @@ export async function updateProduct(input: ProductInput) {
 
   const categoryId = await getOrCreateCategory(input.categorySlug);
   if (!categoryId) return { ok: false as const, error: "Failed to resolve category." };
+  const rpScoreQuality = normalizeScore(input.rpScoreQuality);
+  const rpScoreReputation = normalizeScore(input.rpScoreReputation);
+  const rpScoreValue = normalizeScore(input.rpScoreValue);
+  const rpScoreTotal = computeRpScoreTotal({
+    quality: rpScoreQuality,
+    reputation: rpScoreReputation,
+    value: rpScoreValue,
+  });
+  const normalizedPurgeReason = normalizePurgeReason(input.purgeReason);
+  const isPurged = Boolean(input.isPurged) || normalizedPurgeReason != null;
+  const isPublished = isPurged ? false : input.isPublished;
 
   await db
     .update(products)
@@ -180,7 +251,13 @@ export async function updateProduct(input: ProductInput) {
       description: input.description,
       affiliateUrl: input.affiliateUrl,
       categoryId,
-      isPublished: input.isPublished,
+      isPublished,
+      isPurged,
+      purgeReason: isPurged ? normalizedPurgeReason : null,
+      rpScoreQuality,
+      rpScoreReputation,
+      rpScoreValue,
+      rpScoreTotal,
       updatedAt: new Date(),
     })
     .where(eq(products.id, input.id));
@@ -240,6 +317,14 @@ export async function listProductsByRegion(region: "indonesia" | "global") {
           category: {
             columns: { region: true, slug: true, name: true },
           },
+          affiliatePrograms: {
+            columns: {
+              id: true,
+              region: true,
+              isActive: true,
+              lastHealthStatus: true,
+            },
+          },
         },
         orderBy: asc(products.createdAt),
       });
@@ -247,5 +332,102 @@ export async function listProductsByRegion(region: "indonesia" | "global") {
     return rows.filter((row) => row.category?.region === region);
   } catch {
     return [];
+  }
+}
+
+export async function getPublicTrustSnapshot(limit = 4) {
+  const db = getDb();
+  if (!db) {
+    return {
+      publishedCount: 0,
+      draftCount: 0,
+      purgedCount: 0,
+      latestVerified: [],
+      latestPurged: [],
+    };
+  }
+
+  const safeLimit = Math.min(Math.max(Math.trunc(limit) || 4, 1), 12);
+  const safePurgedLimit = Math.min(Math.max(Math.trunc(limit / 2) || 2, 1), 6);
+
+  try {
+    const publishedCountRows = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(eq(products.isPublished, true));
+    const draftCountRows = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(eq(products.isPublished, false));
+    const purgedCountRows = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(eq(products.isPurged, true));
+
+    const latestVerified = await db.query.products.findMany({
+      where: eq(products.isPublished, true),
+      columns: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        rpScoreQuality: true,
+        rpScoreReputation: true,
+        rpScoreValue: true,
+        rpScoreTotal: true,
+      },
+      with: {
+        category: {
+          columns: {
+            region: true,
+            slug: true,
+          },
+        },
+        affiliatePrograms: {
+          columns: {
+            region: true,
+            isActive: true,
+            lastHealthStatus: true,
+          },
+        },
+      },
+      orderBy: desc(products.updatedAt),
+      limit: safeLimit,
+    });
+    const latestPurged = await db.query.products.findMany({
+      where: eq(products.isPurged, true),
+      columns: {
+        id: true,
+        name: true,
+        slug: true,
+        purgeReason: true,
+      },
+      with: {
+        category: {
+          columns: {
+            region: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: desc(products.updatedAt),
+      limit: safePurgedLimit,
+    });
+
+    return {
+      publishedCount: Number(publishedCountRows[0]?.count ?? 0),
+      draftCount: Number(draftCountRows[0]?.count ?? 0),
+      purgedCount: Number(purgedCountRows[0]?.count ?? 0),
+      latestVerified,
+      latestPurged,
+    };
+  } catch {
+    return {
+      publishedCount: 0,
+      draftCount: 0,
+      purgedCount: 0,
+      latestVerified: [],
+      latestPurged: [],
+    };
   }
 }

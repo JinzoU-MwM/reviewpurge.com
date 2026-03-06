@@ -4,12 +4,13 @@ import {
   createActivityLog,
   getActivityLogSecurityStats,
   getActivityLogSecurityTrend,
-  getLatestActivityLogByAction,
   getLatestActivityLogByActionAndReason,
   getRecentSecurityAlertSentReasons,
 } from "@/lib/db/queries/activity-logs";
 import {
   evaluateSecurityAlerts,
+  type SecurityAlertItem,
+  type SecurityAlertThresholds,
   resolveSecurityAlertThresholds,
 } from "@/lib/security/alerts";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -83,25 +84,31 @@ async function sendWebhookWithRetry(input: {
 
   for (let attempt = 1; attempt <= input.maxAttempts; attempt += 1) {
     attempts = attempt;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), input.timeoutMs);
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), input.timeoutMs);
       const response = await fetch(input.url, {
         method: "POST",
         headers: input.headers,
         body: input.body,
         signal: controller.signal,
       });
-      clearTimeout(timeout);
 
       if (response.ok) {
-        return { ok: true as const, attempts, latencyMs: Date.now() - startedAt };
+        return {
+          ok: true as const,
+          attempts,
+          status: response.status,
+          latencyMs: Date.now() - startedAt,
+        };
       }
 
       lastStatus = response.status;
       lastError = "non_2xx";
     } catch {
       lastError = "network_error";
+    } finally {
+      clearTimeout(timeout);
     }
 
     if (attempt < input.maxAttempts) {
@@ -125,6 +132,88 @@ function isCriticalCandidate(alerts: Array<{ value: number; threshold: number }>
   );
 }
 
+type SecurityTrendRow = {
+  day: string;
+  denied: number;
+  rateLimited: number;
+  blockedUrl: number;
+};
+
+type SustainedBreachSummary = {
+  active: boolean;
+  triggered: boolean;
+  windowDays: number;
+  minBreachDays: number;
+  daysEvaluated: number;
+  breachedDays: number;
+  breachedKeys: string[];
+};
+
+function evaluateSustainedBreach(input: {
+  alerts: SecurityAlertItem[];
+  thresholds: SecurityAlertThresholds;
+  trend: SecurityTrendRow[];
+  windowDays: number;
+  minBreachDays: number;
+}): SustainedBreachSummary {
+  const safeWindow = Math.max(1, Math.min(30, Math.trunc(input.windowDays)));
+  const safeMinDays = Math.max(1, Math.min(safeWindow, Math.trunc(input.minBreachDays)));
+  const rows = input.trend.slice(0, safeWindow);
+  if (rows.length === 0 || input.alerts.length === 0) {
+    return {
+      active: true,
+      triggered: false,
+      windowDays: safeWindow,
+      minBreachDays: safeMinDays,
+      daysEvaluated: rows.length,
+      breachedDays: 0,
+      breachedKeys: [],
+    };
+  }
+
+  const keyThresholdPairs = input.alerts.map((alert) => ({
+    key: alert.key,
+    threshold:
+      alert.key === "denied"
+        ? input.thresholds.denied24h
+        : alert.key === "rate_limited"
+          ? input.thresholds.rateLimited24h
+          : input.thresholds.blockedUrl24h,
+  }));
+  const keyBreachedDays = new Map<string, number>();
+  let breachedDays = 0;
+  for (const row of rows) {
+    let rowBreached = false;
+    for (const pair of keyThresholdPairs) {
+      const value =
+        pair.key === "denied"
+          ? row.denied
+          : pair.key === "rate_limited"
+            ? row.rateLimited
+            : row.blockedUrl;
+      if (value >= pair.threshold) {
+        rowBreached = true;
+        keyBreachedDays.set(pair.key, (keyBreachedDays.get(pair.key) ?? 0) + 1);
+      }
+    }
+    if (rowBreached) breachedDays += 1;
+  }
+
+  const breachedKeys = keyThresholdPairs
+    .filter((pair) => (keyBreachedDays.get(pair.key) ?? 0) > 0)
+    .map((pair) => pair.key);
+  const triggered = breachedDays >= safeMinDays;
+  return {
+    active: true,
+    triggered,
+    windowDays: safeWindow,
+    minBreachDays: safeMinDays,
+    daysEvaluated: rows.length,
+    breachedDays,
+    breachedKeys,
+  };
+}
+
 function resolveWebhookTargetBySeverity(severity: AlertSeverity) {
   const fallback = process.env.SECURITY_ALERT_WEBHOOK_URL?.trim() ?? "";
   const warn = process.env.SECURITY_ALERT_WEBHOOK_URL_WARN?.trim() ?? "";
@@ -138,10 +227,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const webhookUrl = process.env.SECURITY_ALERT_WEBHOOK_URL?.trim();
-  if (!webhookUrl) {
+  const hasWebhookTargetConfigured = Boolean(
+    process.env.SECURITY_ALERT_WEBHOOK_URL?.trim() ||
+      process.env.SECURITY_ALERT_WEBHOOK_URL_WARN?.trim() ||
+      process.env.SECURITY_ALERT_WEBHOOK_URL_CRITICAL?.trim(),
+  );
+  if (!hasWebhookTargetConfigured) {
     return NextResponse.json(
-      { ok: false, error: "SECURITY_ALERT_WEBHOOK_URL is not configured" },
+      { ok: false, error: "Security alert webhook target is not configured" },
       { status: 400 },
     );
   }
@@ -187,31 +280,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, sent: false, reason: "no_threshold_breach" });
   }
 
-  const cooldownMs = parsePositiveNumber(
-    process.env.SECURITY_ALERT_COOLDOWN_MS,
-    30 * 60 * 1000,
-  );
-  const latestSent = await getLatestActivityLogByAction("security_alert_sent");
-  if (latestSent) {
-    const elapsed = Date.now() - new Date(latestSent.createdAt).getTime();
-    if (elapsed < cooldownMs) {
-      const retryAfterMs = cooldownMs - elapsed;
-      await logSkippedIfNeeded({
-        reason: "cooldown_active",
-        retryAfterMs,
-        dedupeWindowMs: skipLogWindowMs,
-        message: "Security alert skipped: cooldown window still active.",
-      });
-      return NextResponse.json({
-        ok: true,
-        sent: false,
-        reason: "cooldown_active",
-        retryAfterMs,
-      });
-    }
-  }
-
   const trend = await getActivityLogSecurityTrend(7);
+  const sustainedWindowDays = parsePositiveNumber(
+    process.env.SECURITY_ALERT_SUSTAINED_WINDOW_DAYS,
+    3,
+  );
+  const sustainedMinBreachDays = parsePositiveNumber(
+    process.env.SECURITY_ALERT_SUSTAINED_MIN_BREACH_DAYS,
+    2,
+  );
+  const sustainedBreach = evaluateSustainedBreach({
+    alerts,
+    thresholds,
+    trend,
+    windowDays: sustainedWindowDays,
+    minBreachDays: sustainedMinBreachDays,
+  });
   const criticalConsecutiveMin = parsePositiveNumber(
     process.env.SECURITY_ALERT_CRITICAL_CONSECUTIVE_MIN,
     1,
@@ -230,7 +314,56 @@ export async function POST(request: NextRequest) {
       severity = hasCriticalStreak ? "critical" : "warn";
     }
   }
+  if (severity === "warn" && sustainedBreach.triggered) {
+    severity = "critical";
+  }
+  const severityReason =
+    severity === "critical" ? "threshold_breach_critical" : "threshold_breach_warn";
+  const cooldownDefaultMs = parsePositiveNumber(
+    process.env.SECURITY_ALERT_COOLDOWN_MS,
+    30 * 60 * 1000,
+  );
+  const cooldownMs =
+    severity === "critical"
+      ? parsePositiveNumber(
+          process.env.SECURITY_ALERT_COOLDOWN_MS_CRITICAL,
+          cooldownDefaultMs,
+        )
+      : parsePositiveNumber(
+          process.env.SECURITY_ALERT_COOLDOWN_MS_WARN,
+          cooldownDefaultMs,
+        );
+  const latestSent = await getLatestActivityLogByActionAndReason(
+    "security_alert_sent",
+    severityReason,
+  );
+  if (latestSent) {
+    const elapsed = Date.now() - new Date(latestSent.createdAt).getTime();
+    if (elapsed < cooldownMs) {
+      const retryAfterMs = cooldownMs - elapsed;
+      await logSkippedIfNeeded({
+        reason: "cooldown_active",
+        retryAfterMs,
+        dedupeWindowMs: skipLogWindowMs,
+        message: `Security alert skipped: ${severity} cooldown window still active.`,
+      });
+      return NextResponse.json({
+        ok: true,
+        sent: false,
+        reason: "cooldown_active",
+        severity,
+        retryAfterMs,
+      });
+    }
+  }
+
   const webhookTargetUrl = resolveWebhookTargetBySeverity(severity);
+  if (!webhookTargetUrl) {
+    return NextResponse.json(
+      { ok: false, error: `Webhook URL for severity "${severity}" is not configured` },
+      { status: 400 },
+    );
+  }
   const payload = {
     schemaVersion: SECURITY_ALERT_PAYLOAD_SCHEMA_VERSION,
     event: "security_alert_threshold_breach",
@@ -241,6 +374,7 @@ export async function POST(request: NextRequest) {
     thresholds,
     breached: alerts,
     trend7d: trend,
+    sustainedBreach,
   };
   const payloadBody = JSON.stringify(payload);
 
@@ -331,9 +465,9 @@ export async function POST(request: NextRequest) {
       actorEmail: "system",
       entityType: "system",
       action: "security_alert_sent",
-      reason: severity === "critical" ? "threshold_breach_critical" : "threshold_breach_warn",
+      reason: severityReason,
       attemptCount: delivery.attempts,
-      webhookStatusCode: 200,
+      webhookStatusCode: delivery.status,
       webhookLatencyMs: delivery.latencyMs,
       message: `Security alert sent for ${alerts.map((item) => item.key).join(", ")} in ${delivery.attempts} attempt(s), severity=${severity}.`,
     });

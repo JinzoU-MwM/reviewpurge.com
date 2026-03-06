@@ -41,46 +41,55 @@ function checkRateLimitInMemory(input: CheckInput): CheckResult {
   return { allowed: true, remaining: max - current.count, retryAfterMs: 0 };
 }
 
-let upstashRatelimiter:
-  | {
-      limit: (key: string) => Promise<{
-        success: boolean;
-        remaining: number;
-        reset: number;
-      }>;
-    }
+type UpstashLimiter = {
+  limit: (key: string) => Promise<{
+    success: boolean;
+    remaining: number;
+    reset: number;
+  }>;
+};
+
+let upstashLimiterCache:
+  | Map<string, UpstashLimiter>
   | null
   | undefined;
 
 async function getUpstashLimiter(input: CheckInput) {
-  if (upstashRatelimiter !== undefined) return upstashRatelimiter;
+  if (upstashLimiterCache === null) return null;
 
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
   if (!url || !token) {
-    upstashRatelimiter = null;
-    return upstashRatelimiter;
+    upstashLimiterCache = null;
+    return null;
   }
 
   try {
+    const max = Math.max(1, input.max);
+    const windowMs = Math.max(1, input.windowMs);
+    const policyKey = `${max}:${windowMs}`;
+    const existing = upstashLimiterCache?.get(policyKey);
+    if (existing) return existing;
+
     const [{ Redis }, { Ratelimit }] = await Promise.all([
       import("@upstash/redis"),
       import("@upstash/ratelimit"),
     ]);
     const redis = new Redis({ url, token });
-    upstashRatelimiter = new Ratelimit({
+    const limiter = new Ratelimit({
       redis,
-      limiter: Ratelimit.fixedWindow(
-        Math.max(1, input.max),
-        `${Math.max(1, input.windowMs)} ms`,
-      ),
+      limiter: Ratelimit.fixedWindow(max, `${windowMs} ms`),
       analytics: false,
       prefix: "reviewpurge:ratelimit",
     });
-    return upstashRatelimiter;
+    if (upstashLimiterCache === undefined) {
+      upstashLimiterCache = new Map<string, UpstashLimiter>();
+    }
+    upstashLimiterCache.set(policyKey, limiter);
+    return limiter;
   } catch {
-    upstashRatelimiter = null;
-    return upstashRatelimiter;
+    upstashLimiterCache = null;
+    return null;
   }
 }
 
